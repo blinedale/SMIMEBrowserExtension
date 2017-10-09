@@ -1,0 +1,17 @@
+{
+  "name": "Rocket S/MIME Browser Extension",
+  "version": "0.0.1",
+  "description": "Verifies S/MIME emails in Gmail in your browser.",
+  "homepage_url":"https://github.com/rocket-internet-berlin/RocketSMIMEBrowserExtension",
+  "manifest_version": 2,
+  "minimum_chrome_version": "52",
+  "content_scripts": [
+    {
+      "matches": ["*://mail.google.com/*"],
+      "js": ["content-scripts/cs-bundle.js"]
+    }
+  ],
+  "permissions": [
+    "storage"
+  ]
+}
