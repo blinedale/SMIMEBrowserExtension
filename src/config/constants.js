@@ -12,6 +12,13 @@ const constants = {
     FRAUD_WARNING_FROM_ADDRESS: 'FRAUD_WARNING_FROM_ADDRESS',
     UNKNOWN_VERIFICATION_ERROR: 'UNKNOWN_VERIFICATION_ERROR',
     VERIFICATION_OK: 'VERIFICATION_OK'
+  },
+  db: {
+    dbName: 'RocketSMIMEBrowserExtensionDatabase',
+    dbVersion: 1,
+    stores: {
+      results: 'results'
+    }
   }
 };
 
