@@ -7,22 +7,21 @@ import DbHandler from "../modules/dbHandler";
 
 let gmail = null;
 
-InboxSDK.load(constants.inboxSDK.API_VERSION, constants.inboxSDK.API_KEY).then(function(sdk){
-  sdk.Conversations.registerMessageViewHandler(function (domMessage) {
+// eslint-disable-next-line no-undef
+InboxSDK.load(constants.inboxSDK.API_VERSION, constants.inboxSDK.API_KEY).then(sdk => {
+  sdk.Conversations.registerMessageViewHandler(domMessage => {
     domMessage.getMessageIDAsync().then(messageId => {
-      DbHandler.getSavedResult(messageId)
-        .then(
-          savedResult => {
-            if (!savedResult) {
-              gmail.get.email_source_async(messageId,
-                (rawMessage => verifyAndMark(rawMessage, messageId, domMessage)),
-                (err => console.error(err)),
-                true
-              );
-            } else {
-              addMarking(domMessage, savedResult);
-            }
-          });
+      DbHandler.getSavedResult(messageId).then(savedResult => {
+        if (!savedResult) {
+          gmail.get.email_source_async(messageId,
+            (rawMessage => verifyAndMark(rawMessage, messageId, domMessage)),
+            (err => console.error(err)),
+            true
+          );
+        } else {
+          addMarking(domMessage, savedResult);
+        }
+      });
     });
   });
 });
@@ -32,7 +31,8 @@ function init() {
 
   gmail = new gmailjs.Gmail();
 
-  window.onunload = function(e){
+  // eslint-disable-next-line no-unused-vars
+  window.onunload = function(e) {
     console.log('Closing database connection.');
     DbHandler.closeConnection();
     return false;
@@ -42,14 +42,14 @@ function init() {
 $(document).ready(init);
 
 function addMarking(message, result) {
-  let markedClass = 'smime-mark-' + result.mailId;
-  let messageAttachmentIconDescriptor = {
-    iconUrl: chrome.runtime.getURL('img/' + result.code.toLowerCase() + '.png'),
+  const markedClass = `smime-mark-${result.mailId}`;
+  const messageAttachmentIconDescriptor = {
+    iconUrl: chrome.runtime.getURL(`img/${result.code.toLowerCase()}.png`),
     iconClass: markedClass,
     tooltip: result.message
   };
 
-  if(document.getElementsByClassName(markedClass).length) {
+  if (document.getElementsByClassName(markedClass).length > 0) {
     console.log('already marked');
   } else {
     message.addAttachmentIcon(messageAttachmentIconDescriptor);
