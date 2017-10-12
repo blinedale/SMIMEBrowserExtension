@@ -4,20 +4,21 @@ import * as asn1js from 'asn1js';
 import {SignedData, ContentInfo} from 'pkijs';
 
 import constants from '../config/constants';
+import getResultPrototype from './resultPrototype';
 
 const specificationConstants = constants.smimeSpecification;
 const resultCodes = constants.smimeVerificationResultCodes;
 
+/**
+ * Verifies a passed binaryMessage as a signed S/MIME message.
+ * Resolves if the results from the verification are conclusive.
+ * Rejects if passed empty binaryMessage or we encounter any unhandled error.
+ * @param binaryMessage
+ * @returns {Promise}
+ */
 export function verifyMessageSignature(binaryMessage) {
   return new Promise((resolve, reject) => {
-    const result = {
-      success: false,
-      code: '',
-      message: '',
-      fromEmail: '',
-      fromName: '',
-      signerEmail: ''
-    };
+    const result = getResultPrototype();
 
     if (!binaryMessage) {
       result.success = false;
@@ -34,7 +35,7 @@ export function verifyMessageSignature(binaryMessage) {
       result.success = false;
       result.code = resultCodes.MESSAGE_PARSE_ERROR;
       result.message = 'Could not parse MIME message.';
-      return reject(result);
+      return resolve(result);
     }
 
     // S/MIME signature must be in content node 2. Email content is in content node 1.
@@ -49,35 +50,35 @@ export function verifyMessageSignature(binaryMessage) {
       result.success = false;
       result.code = resultCodes.MESSAGE_NOT_SIGNED;
       result.message = 'Parsed MIME message but key parts of message are not set.';
-      return reject(result);
+      return resolve(result);
     }
 
     if (!isRootNodeContentTypeValueCorrect(parser.node)) {
       result.success = false;
       result.code = resultCodes.MESSAGE_NOT_SIGNED;
       result.message = 'Message content type value does not match that of an S/MIME message.';
-      return reject(result);
+      return resolve(result);
     }
 
     if (!isRootNodeContentTypeProtocolCorrect(parser.node)) {
       result.success = false;
       result.code = resultCodes.MESSAGE_NOT_SIGNED;
       result.message = 'Message content type protocol does not match that of an S/MIME message.';
-      return reject(result);
+      return resolve(result);
     }
 
     if (!isRootNodeContentTypeMicalgCorrect(parser.node)) {
       result.success = false;
       result.code = resultCodes.MESSAGE_NOT_SIGNED;
       result.message = 'Message integrity check algorithm not recognized.';
-      return reject(result);
+      return resolve(result);
     }
 
     if (!isSignatureNodeContentTypeValueCorrect(signatureNode)) {
       result.success = false;
       result.code = resultCodes.MESSAGE_NOT_SIGNED;
       result.message = 'Message signature content type value does not match that of an S/MIME message.';
-      return reject(result);
+      return resolve(result);
     }
 
     // Finally done with specification checks. Let's actually verify the message.
@@ -91,7 +92,7 @@ export function verifyMessageSignature(binaryMessage) {
       result.success = false;
       result.code = resultCodes.MESSAGE_PARSE_ERROR;
       result.message = "Signature could not be parsed correctly.";
-      return reject(result);
+      return resolve(result);
     }
 
     let cmsContentSimpl;
@@ -105,7 +106,7 @@ export function verifyMessageSignature(binaryMessage) {
       result.success = false;
       result.code = resultCodes.MESSAGE_PARSE_ERROR;
       result.message = "Signature could not be processed properly.";
-      return reject(result);
+      return resolve(result);
     }
 
     // Get content of email that was signed. Should be entire first child node.
@@ -138,31 +139,27 @@ export function verifyMessageSignature(binaryMessage) {
           result.success = false;
           result.code = resultCodes.FRAUD_WARNING_CONTENT_VERIFICATION;
           result.message = "Fraud warning: Message content failed verification with signature.";
-          return reject(result);
+          return resolve(result);
         }
 
         if (fromNode.address !== signerEmail) {
           result.success = false;
           result.code = resultCodes.FRAUD_WARNING_FROM_ADDRESS;
           result.message = "Fraud warning: Content passed verification but 'From' email address does not match the signature's email address.";
-          return reject(result);
+          return resolve(result);
         }
 
         result.success = true;
         result.code = resultCodes.VERIFICATION_OK;
-        result.fromEmail = fromNode.address;
-        result.fromName = fromNode.name;
-        result.signerEmail = signerEmail;
         result.message = "Message passed verification.";
         return resolve(result);
-      },
-      error => {
-        result.success = false;
-        result.code = resultCodes.UNKNOWN_VERIFICATION_ERROR;
-        result.message = "Unknown error caught during verification of message content with signature.";
-        return reject(result);
-      }
-    );
+    }).catch(
+    error => {
+      result.success = false;
+      result.code = resultCodes.UNKNOWN_VERIFICATION_ERROR;
+      result.message = `Unknown error caught during verification of message content with signature. See ${error}`;
+      return reject(result);
+    });
   });
 
   function isSignatureNodeContentTypeValueCorrect(signatureNode) {
