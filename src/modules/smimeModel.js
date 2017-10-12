@@ -13,6 +13,7 @@ const resultCodes = constants.smimeVerificationResultCodes;
  * Verifies a passed binaryMessage as a signed S/MIME message.
  * Resolves if the results from the verification are conclusive.
  * Rejects if passed empty binaryMessage or we encounter any unhandled error.
+ * The returned result object's message is meant to be displayed to the user and should not be too technical.
  * @param binaryMessage
  * @returns {Promise}
  */
@@ -22,8 +23,8 @@ export function verifyMessageSignature(binaryMessage) {
 
     if (!binaryMessage) {
       result.success = false;
-      result.code = resultCodes.MESSAGE_PARSE_ERROR;
-      result.message = 'Passed message was empty.';
+      result.code = resultCodes.CANNOT_VERIFY;
+      result.message = 'Message was empty.';
       return reject(result);
     }
 
@@ -33,8 +34,8 @@ export function verifyMessageSignature(binaryMessage) {
 
     if (!parser.node) {
       result.success = false;
-      result.code = resultCodes.MESSAGE_PARSE_ERROR;
-      result.message = 'Could not parse MIME message.';
+      result.code = resultCodes.CANNOT_VERIFY;
+      result.message = 'Message could not be read.';
       return resolve(result);
     }
 
@@ -47,37 +48,38 @@ export function verifyMessageSignature(binaryMessage) {
       !signatureNode ||
       !signatureNode.contentType
     ) {
+      // This is the normal case for non-signed messages.
       result.success = false;
-      result.code = resultCodes.MESSAGE_NOT_SIGNED;
-      result.message = 'Parsed MIME message but key parts of message are not set.';
+      result.code = resultCodes.CANNOT_VERIFY;
+      result.message = 'Message cannot be verified.';
       return resolve(result);
     }
 
     if (!isRootNodeContentTypeValueCorrect(parser.node)) {
       result.success = false;
-      result.code = resultCodes.MESSAGE_NOT_SIGNED;
-      result.message = 'Message content type value does not match that of an S/MIME message.';
+      result.code = resultCodes.CANNOT_VERIFY;
+      result.message = 'Message cannot be verified: Invalid header content type.';
       return resolve(result);
     }
 
     if (!isRootNodeContentTypeProtocolCorrect(parser.node)) {
       result.success = false;
-      result.code = resultCodes.MESSAGE_NOT_SIGNED;
-      result.message = 'Message content type protocol does not match that of an S/MIME message.';
+      result.code = resultCodes.CANNOT_VERIFY;
+      result.message = 'Message cannot be verified: Invalid header protocol.';
       return resolve(result);
     }
 
     if (!isRootNodeContentTypeMicalgCorrect(parser.node)) {
       result.success = false;
-      result.code = resultCodes.MESSAGE_NOT_SIGNED;
-      result.message = 'Message integrity check algorithm not recognized.';
+      result.code = resultCodes.CANNOT_VERIFY;
+      result.message = 'Message cannot be verified: Invalid header algorithm.';
       return resolve(result);
     }
 
     if (!isSignatureNodeContentTypeValueCorrect(signatureNode)) {
       result.success = false;
-      result.code = resultCodes.MESSAGE_NOT_SIGNED;
-      result.message = 'Message signature content type value does not match that of an S/MIME message.';
+      result.code = resultCodes.CANNOT_VERIFY;
+      result.message = 'Message cannot be verified: Invalid signature content type.';
       return resolve(result);
     }
 
@@ -90,8 +92,8 @@ export function verifyMessageSignature(binaryMessage) {
     const asn1 = asn1js.fromBER(signatureBuffer);
     if (asn1.offset === -1) {
       result.success = false;
-      result.code = resultCodes.MESSAGE_PARSE_ERROR;
-      result.message = "Signature could not be parsed correctly.";
+      result.code = resultCodes.FRAUD_WARNING;
+      result.message = "Fraud warning: Message looks signed but the signature is invalid.";
       return resolve(result);
     }
 
@@ -104,8 +106,8 @@ export function verifyMessageSignature(binaryMessage) {
     }
     catch (ex) {
       result.success = false;
-      result.code = resultCodes.MESSAGE_PARSE_ERROR;
-      result.message = "Signature could not be processed properly.";
+      result.code = resultCodes.FRAUD_WARNING;
+      result.message = "Fraud warning: Message looks signed but the signature cannot be read.";
       return resolve(result);
     }
 
@@ -132,20 +134,17 @@ export function verifyMessageSignature(binaryMessage) {
           }
         }
 
-        console.log('passed');
-        console.log(verificationResult);
-
         if (failed) {
           result.success = false;
-          result.code = resultCodes.FRAUD_WARNING_CONTENT_VERIFICATION;
-          result.message = "Fraud warning: Message content failed verification with signature.";
+          result.code = resultCodes.FRAUD_WARNING;
+          result.message = "Fraud warning: Message failed verification with signature.";
           return resolve(result);
         }
 
         if (fromNode.address !== signerEmail) {
           result.success = false;
-          result.code = resultCodes.FRAUD_WARNING_FROM_ADDRESS;
-          result.message = "Fraud warning: Content passed verification but 'From' email address does not match the signature's email address.";
+          result.code = resultCodes.FRAUD_WARNING;
+          result.message = "Fraud warning: Message passed verification but 'From' email address does not match the signature's email address.";
           return resolve(result);
         }
 
@@ -156,8 +155,9 @@ export function verifyMessageSignature(binaryMessage) {
     }).catch(
     error => {
       result.success = false;
-      result.code = resultCodes.UNKNOWN_VERIFICATION_ERROR;
-      result.message = `Unknown error caught during verification of message content with signature. See ${error}`;
+      result.code = resultCodes.CANNOT_VERIFY;
+      result.message = 'Message cannot be verified: Unknown error caught during verification.';
+      console.error(error);
       return reject(result);
     });
   });

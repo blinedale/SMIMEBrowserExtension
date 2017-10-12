@@ -123,8 +123,7 @@ function mark(result) {
     return;
   }
 
-  if (result.code === constants.smimeVerificationResultCodes.FRAUD_WARNING_FROM_ADDRESS ||
-    result.code === constants.smimeVerificationResultCodes.FRAUD_WARNING_CONTENT_VERIFICATION) {
+  if (result.code === constants.smimeVerificationResultCodes.FRAUD_WARNING) {
     setFraudRisk();
     return;
   }
