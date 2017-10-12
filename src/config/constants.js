@@ -19,7 +19,11 @@ const constants = {
     stores: {
       results: 'results'
     }
-  }
+  },
+  inboxSDK: {
+    API_VERSION: 1,
+    API_KEY: 'sdk_RocketSMIME_4eac33aa65'
+  },
 };
 
 export default constants;

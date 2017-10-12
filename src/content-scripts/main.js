@@ -5,9 +5,74 @@ import {verifyMessageSignature} from '../modules/smimeModel';
 import constants from '../config/constants';
 import { getDb, getSavedResult, saveResult } from "../modules/dbHandler";
 
-const SCAN_LOOP_INTERVAL = 2500;
 let gmail = null;
 let db = null;
+let currentMessageId = 0;
+
+function addMarking(message, type) {
+  let messageAttachmentIconDescriptor = null;
+  switch (type) {
+    case constants.smimeVerificationResultCodes.UNKNOWN_VERIFICATION_ERROR:
+      messageAttachmentIconDescriptor = {
+        iconUrl: 'https://raw.githubusercontent.com/rocket-internet-berlin/RocketSMIMEBrowserExtension/thread-handling/src/img/verified.png?token=AK-NuuUnh04mTV3EBwMtaQjf9mZ7RNCgks5Z6J_SwA%3D%3D',
+        tooltip: constants.smimeVerificationResultCodes.UNKNOWN_VERIFICATION_ERROR
+      };
+      break;
+    case constants.smimeVerificationResultCodes.VERIFICATION_OK:
+      messageAttachmentIconDescriptor = {
+        iconUrl: 'https://raw.githubusercontent.com/rocket-internet-berlin/RocketSMIMEBrowserExtension/thread-handling/src/img/verified.png?token=AK-NuuUnh04mTV3EBwMtaQjf9mZ7RNCgks5Z6J_SwA%3D%3D',
+        tooltip: constants.smimeVerificationResultCodes.VERIFICATION_OK
+      };
+      break;
+  }
+  message.addAttachmentIcon(messageAttachmentIconDescriptor);
+}
+
+InboxSDK.load(constants.inboxSDK.API_VERSION, constants.inboxSDK.API_KEY).then(function(sdk){
+  sdk.Conversations.registerMessageViewHandler(function () {
+    sdk.Conversations.registerThreadViewHandler(function (threadView) {
+      $.each(threadView.getMessageViewsAll(), function (key, message) {
+        if (message.isLoaded()) {
+          message.getMessageIDAsync().then(messageId => {
+            currentMessageId = key;
+
+            // S/MIME verification
+            if (alreadyRanVerification()) {
+              console.log('Already verified');
+              return;
+            }
+
+            setChecking();
+
+            getSavedResult(db, messageId)
+              .then(
+                savedResult => {
+                  if (!savedResult) {
+                    console.log('Got no saved result');
+                    // Have no saved result. Let's fetch for this email and save the verification result.
+
+                    // Get source
+                    gmail.get.email_source_async(messageId,
+                      (fullRawEmail => verifyAndMark(fullRawEmail, messageId)),
+                      (err => console.error(err)),
+                      true // prefer binary
+                    );
+
+                    return;
+                  }
+
+                  console.log('We have verification results, let us mark them in the UI.');
+
+                  // Do marking
+                  mark(savedResult);
+                });
+          });
+        }
+      });
+    });
+
+  });
+});
 
 function init() {
   console.log('Rocket S/MIME Browser Extension loaded!');
@@ -19,11 +84,6 @@ function init() {
     }
   );
 
-  scanLoop();
-  window.setInterval(function() {
-    scanLoop();
-  }, SCAN_LOOP_INTERVAL);
-
   window.onunload = function(e){
     if (db) {
       console.log('Closing database connection.');
@@ -34,65 +94,6 @@ function init() {
 }
 
 $(document).ready(init);
-
-function grabThreadId() {
-  var matched = window.location.hash.match(/[A-Za-z0-9]+$/);
-  if (matched) {
-    return matched[0];
-  }
-
-  return null;
-}
-
-function scanLoop() {
-  var result = /^https:\/\/mail\.google\.com\/mail\/.+inbox\/([a-z0-9]+)$/.exec(window.location.href);
-
-  if (result && result.length > 1) {
-    console.log(window.location.href);
-    const threadId = grabThreadId();
-
-
-    if (alreadyRanVerification()) {
-      console.log('Already verified');
-      return;
-    }
-
-    setChecking();
-
-    // for now assuming thread id is mail id
-
-    // Check if we already verified this id
-
-    // Normally, we'd fetch the ids of all visible emails in this thread and then foreach getSavedResult.
-
-    getSavedResult(db, threadId)
-      .then(
-        savedResult => {
-
-          if (!savedResult) {
-
-            console.log('Got no saved result');
-            // Have no saved result. Let's fetch for this email and save the verification result.
-
-            // Get source
-            gmail.get.email_source_async(null,
-              (fullRawEmail => verifyAndMark(fullRawEmail, threadId)),
-              (err => console.error(err)),
-              true // prefer binary
-            );
-
-            return;
-          }
-
-          console.log('We have verification results, let us mark them in the UI.');
-
-          // Do marking
-          mark(savedResult);
-      });
-  } else {
-    console.log('found no email to verify');
-  }
-}
 
 function verifyAndMark(msg, mailId) {
   verifyMessageSignature(msg)
@@ -157,5 +158,5 @@ function alreadyRanVerification() {
 }
 
 function getNameElement() {
-  return document.getElementsByClassName('gD')[0];
+  return document.getElementsByClassName('gD')[currentMessageId];
 }
