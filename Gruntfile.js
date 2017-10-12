@@ -1,5 +1,3 @@
-'use strict';
-
 module.exports = function(grunt) {
 
   const pkg = grunt.file.readJSON('package.json');
@@ -15,7 +13,7 @@ module.exports = function(grunt) {
           expand: true,
           cwd: 'src/',
           src: [
-            'chrome/manifest.json'
+            'chrome/*'
           ],
           dest: 'build/'
         }]
