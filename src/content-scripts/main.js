@@ -88,24 +88,24 @@ function init() {
 $(document).ready(init);
 
 function verifyAndMark(msg, mailId) {
-  verifyMessageSignature(msg)
-    .then(
+  try {
+    verifyMessageSignature(msg).then(
       result => {
-
         result.mailId = mailId;
 
         DbHandler.saveResult(result); // Can run this async, does not affect marking.
 
-        console.log(`S/MIME verification SUCCESS`);
+        console.log(`Reached conclusive result in S/MIME verification.`);
         console.log(result);
 
         mark(result);
       }
-    )
-    .catch(err => {
-      console.error(`S/MIME verification failed with code ${err.code}. Will not save result.`);
-      console.error(err);
-    });
+    );
+  }
+  catch (ex) {
+    console.error(`S/MIME verification failed due to uncaught exception. Will not save result.`);
+    console.error(ex);
+  }
 }
 
 function mark(result) {
