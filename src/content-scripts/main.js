@@ -4,6 +4,7 @@ import {verifyMessageSignature} from '../modules/smimeModel';
 import Config from '../modules/config';
 import DbHandler from '../modules/dbHandler';
 import Logger from '../modules/logger';
+import Marking from "../modules/marking";
 
 let gmail = null;
 
@@ -25,7 +26,7 @@ InboxSDK.load(inboxSDKApiVersion, inboxSDKApiKey).then(sdk => {
             true
           );
         } else {
-          addMarking(domMessage, savedResult);
+          Marking.prepare(domMessage, savedResult).withAttachmentIcon();
         }
       });
     });
@@ -38,21 +39,6 @@ InboxSDK.load(inboxSDKApiVersion, inboxSDKApiKey).then(sdk => {
   };
 });
 
-function addMarking(message, result) {
-  const markedClass = `smime-mark-${result.mailId}`;
-  const messageAttachmentIconDescriptor = {
-    iconUrl: chrome.runtime.getURL(`img/${result.code.toLowerCase()}.png`),
-    iconClass: markedClass,
-    tooltip: result.message
-  };
-
-  if (document.getElementsByClassName(markedClass).length > 0) {
-    Logger.log(`Mail id ${result.mailId} already marked`);
-  } else {
-    message.addAttachmentIcon(messageAttachmentIconDescriptor);
-  }
-}
-
 function verifyAndMark(rawMessage, mailId, domMessage) {
   try {
     verifyMessageSignature(rawMessage).then(result => {
@@ -63,7 +49,7 @@ function verifyAndMark(rawMessage, mailId, domMessage) {
 
       DbHandler.saveResult(result); // Can run this async, does not affect marking.
 
-      addMarking(domMessage, result);
+      Marking.prepare(domMessage, result).withAttachmentIcon();
     });
   }
   catch (ex) {
