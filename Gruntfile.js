@@ -15,7 +15,7 @@ module.exports = function(grunt) {
       target: [
         '*.js',
         'src/**/*.js',
-        'test/**/*.js',
+        'tests/**/*.js',
         '!src/lib/*',
         '!src/chrome/background.js'
       ]

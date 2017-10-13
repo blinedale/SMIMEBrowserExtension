@@ -1,4 +1,8 @@
 class GmailSource {
+  constructor(loggerService) {
+    this.loggerService = loggerService;
+  }
+
   /**
    * Method heavily inspired by https://github.com/KartikTalwar/gmail.js by way of MIT License through Kartik Talwar.
    * @param messageId
@@ -38,7 +42,7 @@ class GmailSource {
         }
       };
       request.onerror = ev => {
-        console.log(ev);
+        this.loggerService.err(ev);
         reject(ev);
       };
 
@@ -47,4 +51,4 @@ class GmailSource {
   }
 }
 
-export default new GmailSource();
+export default GmailSource;

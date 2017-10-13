@@ -72,7 +72,6 @@ class MarkingService {
 
   isInbox() {
     const result = /^https:\/\/inbox\.google\.com\/([a-z0-9/?=&]+)?$/.exec(window.location.href);
-    console.log(result);
     if (result != null && result.length) {
       return true;
     }
@@ -131,4 +130,4 @@ class MarkingService {
   }
 }
 
-export default new MarkingService();
+export default MarkingService;
