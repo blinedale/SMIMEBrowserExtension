@@ -15,10 +15,12 @@
     "scripts": ["background.js"],
     "persistent": false
   },
-
+  "web_accessible_resources": [
+    "img/*.png"
+  ],
   "content_scripts": [
     {
-      "matches": ["*://mail.google.com/*"],
+      "matches": ["*://mail.google.com/*", "*://inbox.google.com/*"],
       "js": ["lib/inboxsdk.js", "content-scripts/cs-bundle.js"]
     }
   ],
