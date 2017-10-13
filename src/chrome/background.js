@@ -8,14 +8,14 @@ chrome.runtime.onInstalled.addListener(function() {
         // That fires when we're on Gmail OR on Inbox
         conditions: [
           new chrome.declarativeContent.PageStateMatcher({
-            pageUrl: { hostEquals: 'mail.google.com' },
+            pageUrl: {hostEquals: 'mail.google.com'},
           }),
           new chrome.declarativeContent.PageStateMatcher({
-            pageUrl: { hostEquals: 'inbox.google.com' },
+            pageUrl: {hostEquals: 'inbox.google.com'},
           })
         ],
         // And shows the extension's page action.
-        actions: [ new chrome.declarativeContent.ShowPageAction() ]
+        actions: [new chrome.declarativeContent.ShowPageAction()]
       }
     ]);
   });

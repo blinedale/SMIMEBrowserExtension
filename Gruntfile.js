@@ -1,11 +1,24 @@
 module.exports = function(grunt) {
-
-  const pkg = grunt.file.readJSON('package.json');
   const webpackConfig = require('./webpack.config');
 
   grunt.initConfig({
 
     clean: ['build/**/*'],
+
+    eslint: {
+      options: {
+        maxWarnings: 10,
+        configFile: 'eslint.json',
+        cache: true
+      },
+      target: [
+        '*.js',
+        'src/**/*.js',
+        'test/**/*.js',
+        '!src/lib/*',
+        '!src/chrome/background.js'
+      ]
+    },
 
     copy: {
       chrome: {
@@ -57,7 +70,7 @@ module.exports = function(grunt) {
         stats: !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
       },
       prod: webpackConfig,
-      dev: Object.assign({ watch: true }, webpackConfig)
+      dev: Object.assign({watch: true}, webpackConfig)
     }
 
   });
@@ -67,7 +80,8 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-webpack');
   grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-eslint');
 
   // development build
-  grunt.registerTask('default', ['clean', 'copy:chrome', 'copy:common', 'webpack:prod', 'copy:tmp2chrome']);
+  grunt.registerTask('default', ['clean', 'eslint', 'copy:chrome', 'copy:common', 'webpack:prod', 'copy:tmp2chrome']);
 };

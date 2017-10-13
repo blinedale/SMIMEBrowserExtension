@@ -101,14 +101,15 @@ export function verifyMessageSignature(rawMessage) {
         result.code = resultCodes.VERIFICATION_OK;
         result.message = "Message passed verification.";
         return resolve(result);
-    }).catch(
-    error => {
-      result.success = false;
-      result.code = resultCodes.CANNOT_VERIFY;
-      result.message = 'Message cannot be verified: Unknown error.';
-      console.error(error);
-      return resolve(result);
-    });
+      }).catch(
+      error => {
+        result.success = false;
+        result.code = resultCodes.CANNOT_VERIFY;
+        result.message = 'Message cannot be verified: Unknown error.';
+        console.error(error);
+        return resolve(result);
+      }
+    );
   });
 
   function isValidSmimeEmail(rootNode, signatureNode) {
