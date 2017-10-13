@@ -3,10 +3,9 @@ import * as gmailjs from 'gmail-js';
 
 import {verifyMessageSignature} from '../modules/smimeModel';
 import constants from '../config/constants';
-import { getDb, getSavedResult, saveResult } from "../modules/dbHandler";
+import DbHandler from "../modules/dbHandler";
 
 let gmail = null;
-let db = null;
 let currentMessageId = 0;
 
 function addMarking(message, type) {
@@ -44,7 +43,7 @@ InboxSDK.load(constants.inboxSDK.API_VERSION, constants.inboxSDK.API_KEY).then(f
 
             setChecking();
 
-            getSavedResult(db, messageId)
+            DbHandler.getSavedResult(messageId)
               .then(
                 savedResult => {
                   if (!savedResult) {
@@ -78,17 +77,10 @@ function init() {
   console.log('Rocket S/MIME Browser Extension loaded!');
 
   gmail = new gmailjs.Gmail();
-  getDb().then(
-    dbConnector => {
-      db = dbConnector;
-    }
-  );
 
   window.onunload = function(e){
-    if (db) {
-      console.log('Closing database connection.');
-      db.close();
-    }
+    console.log('Closing database connection.');
+    DbHandler.closeConnection();
     return false;
   };
 }
@@ -102,7 +94,7 @@ function verifyAndMark(msg, mailId) {
 
         result.mailId = mailId;
 
-        saveResult(db, result); // Can run this async, does not affect marking.
+        DbHandler.saveResult(result); // Can run this async, does not affect marking.
 
         console.log(`S/MIME verification SUCCESS`);
         console.log(result);
