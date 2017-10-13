@@ -19,7 +19,7 @@ const constants = {
   },
   inboxSDK: {
     API_VERSION: 1,
-    API_KEY: 'sdk_RocketSMIME_4eac33aa65'
+    API_KEY: window.atob('c2RrX1JvY2tldFNNSU1FXzRlYWMzM2FhNjU=')
   },
 };
 
