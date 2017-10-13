@@ -1,4 +1,5 @@
 import Config from './config';
+import Logger from '../modules/logger';
 
 const dbConfig = Config.get('db');
 
@@ -25,8 +26,8 @@ class DbHandler {
       const request = window.indexedDB.open(dbConfig.dbName, dbConfig.dbVersion);
 
       request.onerror = function(event) {
-        console.error('Rocket S/MIME Browser extension: Error while creating database connector.');
-        console.error(event);
+        Logger.err('Error while creating database connector.');
+        Logger.err(event);
         return resolve(null);
       };
 
@@ -36,7 +37,7 @@ class DbHandler {
         if (event.oldVersion < 1) {
           // There is no old version - creating db and store from scratch
           dbConnection.createObjectStore(dbConfig.stores.results, {keyPath: "mailId"});
-          console.log('Rocket S/MIME Browser extension: Created database successfully.');
+          Logger.log('Created database successfully.');
         }
         if (event.oldVersion < 2) {
           // In future versions we'd upgrade our database here.
@@ -47,7 +48,7 @@ class DbHandler {
          or not. In that case it is run after the upgrade is done. */
       request.onsuccess = function(event) {
         dbConnection = event.target.result;
-        console.log('Rocket S/MIME Browser extension: Created database connector.');
+        Logger.log('Created database connector.');
         return resolve(dbConnection);
       };
     });
@@ -56,12 +57,12 @@ class DbHandler {
   getSavedResult(mailId) {
     return new Promise(resolve => {
       if (!this.db) {
-        console.error(`Tried to get result for a mail id but there is no database connection.`);
+        Logger.err(`Tried to get result for mail id ${mailId} but there is no database connection.`);
         return resolve(null);
       }
 
       if (!mailId) {
-        console.error(`Tried to get result for a mail id but an empty or invalid mail id was passed.`);
+        Logger.err(`Tried to get result for mail id ${mailId} but an empty or invalid mail id was passed.`);
         return resolve(null);
       }
 
@@ -70,15 +71,15 @@ class DbHandler {
       const request = resultStore.get(mailId);
 
       request.onerror = function(event) {
-        console.error(`Ran into an error when getting result for mail id ${mailId}`);
-        console.error(event);
+        Logger.err(`Ran into an error when getting result for mail id ${mailId}`);
+        Logger.err(event);
         return resolve(null);
       };
 
+      // eslint-disable-next-line no-unused-vars
       request.onsuccess = function(event) {
-        console.log(`Fetched saved result for mail id ${mailId}`);
-        console.log(request.result);
-        console.log(event);
+        Logger.log(`Get query completed for mail id ${mailId}`);
+        Logger.log(request.result);
         return resolve(request.result);
       };
     });
@@ -87,12 +88,12 @@ class DbHandler {
   saveResult(resultObject) {
     return new Promise(resolve => {
       if (!this.db) {
-        console.error(`Tried to save result for a mail id but there is no database connection.`);
+        Logger.err(`Tried to save a verification result but there is no database connection.`);
         return resolve(null);
       }
 
       if (!resultObject || !resultObject.mailId) {
-        console.error(`Tried to save result for a mail id an invalid result object was passed.`);
+        Logger.err(`Tried to save result for a mail id an invalid result object was passed.`);
         return resolve(null);
       }
 
@@ -101,21 +102,21 @@ class DbHandler {
       const request = resultStore.add(resultObject);
 
       request.onerror = function(event) {
-        console.error(`Ran into an error when saving result for mail id ${resultObject.mailId}`);
-        console.error(event);
+        Logger.err(`Ran into an error when saving result for mail id ${resultObject.mailId}`);
+        Logger.err(event);
         return resolve(null);
       };
 
+      // eslint-disable-next-line no-unused-vars
       request.onsuccess = function(event) {
-        console.log(`Query success for mail id ${resultObject.mailId}`);
-        console.log(request.result);
-        console.log(event);
+        Logger.log(`Save success for mail id ${resultObject.mailId}`);
         return resolve(request.result);
       };
     });
   }
 
   closeConnection() {
+    Logger.log('Closing database connection.');
     this.db.close();
   }
 }

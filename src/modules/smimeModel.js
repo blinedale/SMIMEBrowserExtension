@@ -5,6 +5,7 @@ import {SignedData, ContentInfo} from 'pkijs';
 
 import Config from './config';
 import getResultPrototype from './resultPrototype';
+import Logger from './logger';
 
 const specificationConstants = Config.get('smimeSpecification');
 const resultCodes = Config.get('smimeVerificationResultCodes');
@@ -106,7 +107,7 @@ export function verifyMessageSignature(rawMessage) {
         result.success = false;
         result.code = resultCodes.CANNOT_VERIFY;
         result.message = 'Message cannot be verified: Unknown error.';
-        console.error(error);
+        Logger.err(error);
         return resolve(result);
       }
     );

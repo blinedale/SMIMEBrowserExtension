@@ -20,5 +20,11 @@
   "inboxSDK": {
     "API_VERSION": 1,
     "API_KEY": "c2RrX1JvY2tldFNNSU1FXzRlYWMzM2FhNjU="
+  },
+  "application": {
+    "logger": {
+      "debugMode": true,
+      "prefix": "Rocket S/MIME Browser Extension: "
+    }
   }
 }

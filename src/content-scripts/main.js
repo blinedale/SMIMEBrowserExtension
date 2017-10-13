@@ -1,8 +1,9 @@
 import * as gmailjs from 'gmail-js';
 
 import {verifyMessageSignature} from '../modules/smimeModel';
-import DbHandler from "../modules/dbHandler";
 import Config from '../modules/config';
+import DbHandler from '../modules/dbHandler';
+import Logger from '../modules/logger';
 
 let gmail = null;
 
@@ -20,7 +21,7 @@ InboxSDK.load(inboxSDKApiVersion, inboxSDKApiKey).then(sdk => {
         if (!savedResult) {
           gmail.get.email_source_async(messageId,
             (rawMessage => verifyAndMark(rawMessage, messageId, domMessage)),
-            (err => console.error(err)),
+            (err => Logger.err(err)),
             true
           );
         } else {
@@ -32,7 +33,6 @@ InboxSDK.load(inboxSDKApiVersion, inboxSDKApiKey).then(sdk => {
 
   // eslint-disable-next-line no-unused-vars
   window.onunload = function(e) {
-    console.log('Closing database connection.');
     DbHandler.closeConnection();
     return false;
   };
@@ -47,7 +47,7 @@ function addMarking(message, result) {
   };
 
   if (document.getElementsByClassName(markedClass).length > 0) {
-    console.log('already marked');
+    Logger.log(`Mail id ${result.mailId} already marked`);
   } else {
     message.addAttachmentIcon(messageAttachmentIconDescriptor);
   }
@@ -55,21 +55,19 @@ function addMarking(message, result) {
 
 function verifyAndMark(rawMessage, mailId, domMessage) {
   try {
-    verifyMessageSignature(rawMessage).then(
-      result => {
-        result.mailId = mailId;
+    verifyMessageSignature(rawMessage).then(result => {
+      result.mailId = mailId;
 
-        DbHandler.saveResult(result); // Can run this async, does not affect marking.
+      Logger.log(`Reached conclusive result in S/MIME verification of mail id ${mailId}. Will attempt to save it.`);
+      Logger.log(result);
 
-        console.log(`Reached conclusive result in S/MIME verification.`);
-        console.log(result);
+      DbHandler.saveResult(result); // Can run this async, does not affect marking.
 
-        addMarking(domMessage, result);
-      }
-    );
+      addMarking(domMessage, result);
+    });
   }
   catch (ex) {
-    console.error(`S/MIME verification failed due to uncaught exception. Will not save result.`);
-    console.error(ex);
+    Logger.err(`S/MIME verification failed due to uncaught exception for mail id ${mailId}. Will not save result.`);
+    Logger.err(ex);
   }
 }
