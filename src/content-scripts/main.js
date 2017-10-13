@@ -1,4 +1,3 @@
-import $ from 'jquery';
 import * as gmailjs from 'gmail-js';
 
 import {verifyMessageSignature} from '../modules/smimeModel';
@@ -9,6 +8,8 @@ let gmail = null;
 
 // eslint-disable-next-line no-undef
 InboxSDK.load(constants.inboxSDK.API_VERSION, constants.inboxSDK.API_KEY).then(sdk => {
+  gmail = new gmailjs.Gmail();
+
   sdk.Conversations.registerMessageViewHandler(domMessage => {
     domMessage.getMessageIDAsync().then(messageId => {
       DbHandler.getSavedResult(messageId).then(savedResult => {
@@ -24,12 +25,6 @@ InboxSDK.load(constants.inboxSDK.API_VERSION, constants.inboxSDK.API_KEY).then(s
       });
     });
   });
-});
-
-function init() {
-  console.log('Rocket S/MIME Browser Extension loaded!');
-
-  gmail = new gmailjs.Gmail();
 
   // eslint-disable-next-line no-unused-vars
   window.onunload = function(e) {
@@ -37,9 +32,7 @@ function init() {
     DbHandler.closeConnection();
     return false;
   };
-}
-
-$(document).ready(init);
+});
 
 function addMarking(message, result) {
   const markedClass = `smime-mark-${result.mailId}`;
