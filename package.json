@@ -21,8 +21,7 @@
     "emailjs-mime-builder": "^1.0.1",
     "emailjs-mime-parser": "^1.0.0",
     "gmail-js": "^0.6.11",
-    "jquery": "^3.2.1",
-    "pkijs": "^2.1.4",
+    "pkijs": "^2.1.6",
     "pvutils": "^1.0.8"
   },
   "devDependencies": {
@@ -32,6 +31,6 @@
     "grunt-contrib-watch": "^1.0.0",
     "grunt-eslint": "^20.1.0",
     "grunt-webpack": "^3.0.2",
-    "webpack": "^3.6.0"
+    "webpack": "^3.7.1"
   }
 }
