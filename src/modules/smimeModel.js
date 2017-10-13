@@ -10,104 +10,56 @@ const specificationConstants = constants.smimeSpecification;
 const resultCodes = constants.smimeVerificationResultCodes;
 
 /**
- * Verifies a passed binaryMessage as a signed S/MIME message.
- * Resolves if the results from the verification are conclusive.
- * Rejects if passed empty binaryMessage or we encounter any unhandled error.
+ * Verifies a passed rawMessage as a signed S/MIME message.
+ * You should surround this with try/catch where it's called in case of unexpected exceptions that prohibit reaching
+ * a conclusive result - in this case we should not persist the result.
  * The returned result object's message is meant to be displayed to the user and should not be too technical.
- * @param binaryMessage
+ * @param rawMessage Full MIME message. Preferably in binary form as this reduces the risk of encoding issues.
  * @returns {Promise}
  */
-export function verifyMessageSignature(binaryMessage) {
-  return new Promise((resolve, reject) => {
+export function verifyMessageSignature(rawMessage) {
+  return new Promise(resolve => {
     const result = getResultPrototype();
-
-    if (!binaryMessage) {
-      result.success = false;
-      result.code = resultCodes.CANNOT_VERIFY;
-      result.message = 'Message was empty.';
-      return reject(result);
-    }
-
     const parser = new MimeParser();
-    parser.write(binaryMessage);
+    parser.write(rawMessage);
     parser.end();
-
-    if (!parser.node) {
-      result.success = false;
-      result.code = resultCodes.CANNOT_VERIFY;
-      result.message = 'Message could not be read.';
-      return resolve(result);
-    }
 
     // S/MIME signature must be in content node 2. Email content is in content node 1.
     const signatureNode = parser.getNode("2");
 
-    if (!parser.node.contentType ||
-      !parser.node.contentType.params ||
-      !parser.node._childNodes ||
-      !signatureNode ||
-      !signatureNode.contentType
-    ) {
-      // This is the normal case for non-signed messages.
+    if (!isValidSmimeEmail(parser.node, signatureNode)) {
       result.success = false;
       result.code = resultCodes.CANNOT_VERIFY;
-      result.message = 'Message cannot be verified.';
-      return resolve(result);
-    }
-
-    if (!isRootNodeContentTypeValueCorrect(parser.node)) {
-      result.success = false;
-      result.code = resultCodes.CANNOT_VERIFY;
-      result.message = 'Message cannot be verified: Invalid header content type.';
-      return resolve(result);
-    }
-
-    if (!isRootNodeContentTypeProtocolCorrect(parser.node)) {
-      result.success = false;
-      result.code = resultCodes.CANNOT_VERIFY;
-      result.message = 'Message cannot be verified: Invalid header protocol.';
-      return resolve(result);
-    }
-
-    if (!isRootNodeContentTypeMicalgCorrect(parser.node)) {
-      result.success = false;
-      result.code = resultCodes.CANNOT_VERIFY;
-      result.message = 'Message cannot be verified: Invalid header algorithm.';
-      return resolve(result);
-    }
-
-    if (!isSignatureNodeContentTypeValueCorrect(signatureNode)) {
-      result.success = false;
-      result.code = resultCodes.CANNOT_VERIFY;
-      result.message = 'Message cannot be verified: Invalid signature content type.';
+      result.message = 'Message is not digitally signed.';
       return resolve(result);
     }
 
     // Finally done with specification checks. Let's actually verify the message.
 
-    // Get signature buffer
-    const signatureBuffer = utilConcatBuf(new ArrayBuffer(0), signatureNode.content);
-
-    // Parse into pkijs types
-    const asn1 = asn1js.fromBER(signatureBuffer);
-    if (asn1.offset === -1) {
-      result.success = false;
-      result.code = resultCodes.FRAUD_WARNING;
-      result.message = "Fraud warning: Message looks signed but the signature is invalid.";
-      return resolve(result);
-    }
-
-    let cmsContentSimpl;
-    let cmsSignedSimpl;
+    let cmsContentSimpl = null;
+    let cmsSignedSimpl = null;
+    let signerEmail = '';
 
     try {
+      // Get signature buffer
+      const signatureBuffer = utilConcatBuf(new ArrayBuffer(0), signatureNode.content);
+
+      // Parse into pkijs types
+      const asn1 = asn1js.fromBER(signatureBuffer);
+      if (asn1.offset === -1) {
+        throw new TypeError('Could not parse signature.');
+      }
+
       cmsContentSimpl = new ContentInfo({schema: asn1.result});
       cmsSignedSimpl = new SignedData({schema: cmsContentSimpl.content});
+
+      // Get signer's email address from signature
+      signerEmail = cmsSignedSimpl.certificates[0].subject.typesAndValues[0].value.valueBlock.value;
     }
     catch (ex) {
       result.success = false;
       result.code = resultCodes.FRAUD_WARNING;
-      result.message = "Fraud warning: Message looks signed but the signature cannot be read.";
+      result.message = "Fraud warning: Invalid signature.";
       return resolve(result);
     }
 
@@ -119,11 +71,6 @@ export function verifyMessageSignature(binaryMessage) {
     sequence = sequence.then(
       () => cmsSignedSimpl.verify({signer: 0, data: signedDataBuffer})
     );
-
-    // Get signer's email address from signature
-    const signerEmail = cmsSignedSimpl.certificates[0].subject.typesAndValues[0].value.valueBlock.value;
-
-    const fromNode = parser.node.headers.from[0].value[0];
 
     sequence.then(
       verificationResult => {
@@ -141,10 +88,12 @@ export function verifyMessageSignature(binaryMessage) {
           return resolve(result);
         }
 
+        const fromNode = parser.node.headers.from[0].value[0];
+
         if (fromNode.address !== signerEmail) {
           result.success = false;
           result.code = resultCodes.FRAUD_WARNING;
-          result.message = "Fraud warning: Message passed verification but 'From' email address does not match the signature's email address.";
+          result.message = "Fraud warning: The 'From' email address does not match the signature's email address.";
           return resolve(result);
         }
 
@@ -156,14 +105,22 @@ export function verifyMessageSignature(binaryMessage) {
     error => {
       result.success = false;
       result.code = resultCodes.CANNOT_VERIFY;
-      result.message = 'Message cannot be verified: Unknown error caught during verification.';
+      result.message = 'Message cannot be verified: Unknown error.';
       console.error(error);
-      return reject(result);
+      return resolve(result);
     });
   });
 
-  function isSignatureNodeContentTypeValueCorrect(signatureNode) {
-    return specificationConstants.signatureNodeContentTypeValues.indexOf(signatureNode.contentType.value) !== -1;
+  function isValidSmimeEmail(rootNode, signatureNode) {
+    return rootNode.contentType &&
+      rootNode.contentType.params &&
+      rootNode._childNodes &&
+      signatureNode &&
+      signatureNode.contentType  &&
+      isRootNodeContentTypeValueCorrect(rootNode) &&
+      isRootNodeContentTypeProtocolCorrect(rootNode) &&
+      isRootNodeContentTypeMicalgCorrect(rootNode) &&
+      isSignatureNodeContentTypeValueCorrect(signatureNode);
   }
 
   function isRootNodeContentTypeValueCorrect(rootNode) {
@@ -176,5 +133,9 @@ export function verifyMessageSignature(binaryMessage) {
 
   function isRootNodeContentTypeMicalgCorrect(rootNode) {
     return specificationConstants.rootNodeContentTypeMessageIntegrityCheckAlgorithms.indexOf(rootNode.contentType.params.micalg) !== -1;
+  }
+
+  function isSignatureNodeContentTypeValueCorrect(signatureNode) {
+    return specificationConstants.signatureNodeContentTypeValues.indexOf(signatureNode.contentType.value) !== -1;
   }
 }
