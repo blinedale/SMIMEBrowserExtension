@@ -3,11 +3,11 @@ import {stringToArrayBuffer, utilConcatBuf} from 'pvutils';
 import * as asn1js from 'asn1js';
 import {SignedData, ContentInfo} from 'pkijs';
 
-import constants from '../config/constants';
+import Config from './config';
 import getResultPrototype from './resultPrototype';
 
-const specificationConstants = constants.smimeSpecification;
-const resultCodes = constants.smimeVerificationResultCodes;
+const specificationConstants = Config.get('smimeSpecification');
+const resultCodes = Config.get('smimeVerificationResultCodes');
 
 /**
  * Verifies a passed rawMessage as a signed S/MIME message.
