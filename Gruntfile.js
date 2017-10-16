@@ -50,6 +50,7 @@ module.exports = function(grunt) {
           src: [
             'content-scripts/*.css',
             'lib/*',
+            'css/*',
             'img/*'
           ],
           dest: 'build/tmp'

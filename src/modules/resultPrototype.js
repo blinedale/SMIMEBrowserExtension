@@ -4,6 +4,7 @@ function getResultPrototype() {
     success: false,
     code: '',
     message: '',
+    signer: '',
   };
 }
 
