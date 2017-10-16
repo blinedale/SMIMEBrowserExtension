@@ -1,6 +1,6 @@
-import constants from '../config/constants';
+import Config from './config';
 
-const dbConfig = constants.db;
+const dbConfig = Config.get('db');
 
 class DbHandler {
   constructor(dbConfig) {

@@ -16,7 +16,8 @@
     "persistent": false
   },
   "web_accessible_resources": [
-    "img/*.png"
+    "img/*.png",
+    "config.json"
   ],
   "content_scripts": [
     {
@@ -25,7 +26,6 @@
     }
   ],
   "permissions": [
-    "storage",
     "declarativeContent",
     "https://mail-attachment.googleusercontent.com/*"
   ]

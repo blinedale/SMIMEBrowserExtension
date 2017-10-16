@@ -1,13 +1,17 @@
 import * as gmailjs from 'gmail-js';
 
 import {verifyMessageSignature} from '../modules/smimeModel';
-import constants from '../config/constants';
 import DbHandler from "../modules/dbHandler";
+import Config from '../modules/config';
 
 let gmail = null;
 
+const inboxSDKConfig = Config.get('inboxSDK');
+const inboxSDKApiVersion = inboxSDKConfig.API_VERSION;
+const inboxSDKApiKey = window.atob(inboxSDKConfig.API_KEY);
+
 // eslint-disable-next-line no-undef
-InboxSDK.load(constants.inboxSDK.API_VERSION, constants.inboxSDK.API_KEY).then(sdk => {
+InboxSDK.load(inboxSDKApiVersion, inboxSDKApiKey).then(sdk => {
   gmail = new gmailjs.Gmail();
 
   sdk.Conversations.registerMessageViewHandler(domMessage => {

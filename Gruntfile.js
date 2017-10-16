@@ -32,6 +32,17 @@ module.exports = function(grunt) {
         }]
       },
 
+      config: {
+        files: [{
+          expand: true,
+          cwd: 'config/',
+          src: [
+            'config.json'
+          ],
+          dest: 'build/tmp/'
+        }]
+      },
+
       common: {
         files: [{
           expand: true,
@@ -83,5 +94,5 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-eslint');
 
   // development build
-  grunt.registerTask('default', ['clean', 'eslint', 'copy:chrome', 'copy:common', 'webpack:prod', 'copy:tmp2chrome']);
+  grunt.registerTask('default', ['clean', 'eslint', 'copy:chrome', 'copy:config', 'copy:common', 'webpack:prod', 'copy:tmp2chrome']);
 };
