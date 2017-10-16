@@ -1,11 +1,7 @@
-import * as gmailjs from 'gmail-js';
-
 import {verifyMessageSignature} from '../modules/smimeModel';
 import Config from '../modules/config';
 import DbHandler from '../modules/dbHandler';
 import Logger from '../modules/logger';
-
-let gmail = null;
 
 const inboxSDKConfig = Config.get('inboxSDK');
 const inboxSDKApiVersion = inboxSDKConfig.API_VERSION;
@@ -13,17 +9,13 @@ const inboxSDKApiKey = window.atob(inboxSDKConfig.API_KEY);
 
 // eslint-disable-next-line no-undef
 InboxSDK.load(inboxSDKApiVersion, inboxSDKApiKey).then(sdk => {
-  gmail = new gmailjs.Gmail();
-
   sdk.Conversations.registerMessageViewHandler(domMessage => {
     domMessage.getMessageIDAsync().then(messageId => {
       DbHandler.getSavedResult(messageId).then(savedResult => {
         if (!savedResult) {
-          gmail.get.email_source_async(messageId,
-            (rawMessage => verifyAndMark(rawMessage, messageId, domMessage)),
-            (err => Logger.err(err)),
-            true
-          );
+          fetch(`https://mail.google.com/mail/u/0?view=att&th=${messageId}`)
+          .then(rawMessage => verifyAndMark(rawMessage, messageId, domMessage))
+          .catch(err => Logger.err(err));
         } else {
           addMarking(domMessage, savedResult);
         }
