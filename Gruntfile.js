@@ -120,8 +120,8 @@ module.exports = function(grunt) {
       options: {
         stats: !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
       },
-      prod: webpackConfig,
-      dev: Object.assign({watch: true}, webpackConfig)
+      build: webpackConfig,
+      watch: Object.assign({watch: true}, webpackConfig)
     }
 
   });
@@ -136,8 +136,8 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-webpack');
 
   // development build
-  grunt.registerTask('default', ['clean', 'eslint', 'copy:chrome', 'copy:config', 'copy:common', 'webpack:prod', 'copy:tmp2chrome', 'replace:version_chrome']);
+  grunt.registerTask('default', ['clean', 'eslint', 'copy:chrome', 'copy:config', 'copy:common', 'webpack:build', 'copy:tmp2chrome', 'replace:version_chrome']);
 
   // production build
-  grunt.registerTask('prod', ['clean', 'eslint', 'copy:chrome', 'copy:config', 'copy:common', 'webpack:prod', 'replace:debugMode_off', 'copy:tmp2chrome', 'replace:version_chrome', 'compress:chrome']);
+  grunt.registerTask('prod', ['clean', 'eslint', 'copy:chrome', 'copy:config', 'copy:common', 'webpack:build', 'replace:debugMode_off', 'copy:tmp2chrome', 'replace:version_chrome', 'compress:chrome']);
 };

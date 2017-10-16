@@ -1,59 +1,19 @@
-import * as gmailjs from 'gmail-js';
+import * as Base64lib from 'js-base64';
 
-import {verifyMessageSignature} from '../modules/smimeModel';
 import Config from '../modules/config';
-import DbHandler from '../modules/dbHandler';
-import Logger from '../modules/logger';
-import Marking from "../modules/marking";
+import SmimeMessageHandler from '../modules/smimeMessageHandler';
 
-let gmail = null;
+const base64 = Base64lib.Base64;
 
 const inboxSDKConfig = Config.get('inboxSDK');
 const inboxSDKApiVersion = inboxSDKConfig.API_VERSION;
-const inboxSDKApiKey = window.atob(inboxSDKConfig.API_KEY);
+const inboxSDKApiKey = base64.decode(inboxSDKConfig.API_KEY);
 
 // eslint-disable-next-line no-undef
 InboxSDK.load(inboxSDKApiVersion, inboxSDKApiKey).then(sdk => {
-  gmail = new gmailjs.Gmail();
-
   sdk.Conversations.registerMessageViewHandler(domMessage => {
     domMessage.getMessageIDAsync().then(messageId => {
-      DbHandler.getSavedResult(messageId).then(savedResult => {
-        if (!savedResult) {
-          gmail.get.email_source_async(messageId,
-            (rawMessage => verifyAndMark(rawMessage, messageId, domMessage)),
-            (err => Logger.err(err)),
-            true
-          );
-        } else {
-          Marking.prepare(domMessage, savedResult).withAttachmentIcon();
-        }
-      });
+      SmimeMessageHandler.handle(domMessage, messageId);
     });
   });
-
-  // eslint-disable-next-line no-unused-vars
-  window.onunload = function(e) {
-    DbHandler.closeConnection();
-    return false;
-  };
 });
-
-function verifyAndMark(rawMessage, mailId, domMessage) {
-  try {
-    verifyMessageSignature(rawMessage).then(result => {
-      result.mailId = mailId;
-
-      Logger.log(`Reached conclusive result in S/MIME verification of mail id ${mailId}. Will attempt to save it.`);
-      Logger.log(result);
-
-      DbHandler.saveResult(result); // Can run this async, does not affect marking.
-
-      Marking.prepare(domMessage, result).withAttachmentIcon();
-    });
-  }
-  catch (ex) {
-    Logger.err(`S/MIME verification failed due to uncaught exception for mail id ${mailId}. Will not save result.`);
-    Logger.err(ex);
-  }
-}

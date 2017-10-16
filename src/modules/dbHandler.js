@@ -11,6 +11,12 @@ class DbHandler {
     this.db = null;
 
     this.getDb(dbConfig).then(db => { this.db = db; });
+
+    // eslint-disable-next-line no-unused-vars
+    window.onunload = function(e) {
+      this.closeConnection();
+      return false;
+    };
   }
 
   /**
@@ -21,10 +27,8 @@ class DbHandler {
   getDb(dbConfig) {
     return new Promise(resolve => {
       if (!window.indexedDB) {
-        return resolve();
+        return resolve(null);
       }
-
-      let dbConnection = null;
 
       const request = window.indexedDB.open(dbConfig.dbName, dbConfig.dbVersion);
 
@@ -33,6 +37,8 @@ class DbHandler {
         Logger.err(event);
         return resolve(null);
       };
+
+      let dbConnection = null;
 
       // Upgrade/create db as needed
       request.onupgradeneeded = function(event) {
@@ -129,7 +135,9 @@ class DbHandler {
 
   closeConnection() {
     Logger.log('Closing database connection.');
-    this.db.close();
+    if (this.db) {
+      this.db.close();
+    }
   }
 }
 
