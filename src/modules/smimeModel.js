@@ -3,12 +3,10 @@ import {stringToArrayBuffer, utilConcatBuf} from 'pvutils';
 import * as asn1js from 'asn1js';
 import {SignedData, ContentInfo} from 'pkijs';
 
-import Config from './config';
 import getResultPrototype from './resultPrototype';
 import Logger from './logger';
-
-const specificationConstants = Config.get('smimeSpecification');
-const resultCodes = Config.get('smimeVerificationResultCodes');
+import smimeSpecificationConstants from '../constants/smimeSpecificationConstants';
+import smimeVerificationResultCodes from '../constants/smimeVerificationResultCodes';
 
 /**
  * Verifies a passed rawMessage as a signed S/MIME message.
@@ -30,7 +28,7 @@ export function verifyMessageSignature(rawMessage) {
 
     if (!isValidSmimeEmail(parser.node, signatureNode)) {
       result.success = false;
-      result.code = resultCodes.CANNOT_VERIFY;
+      result.code = smimeVerificationResultCodes.CANNOT_VERIFY;
       result.message = 'Message is not digitally signed.';
       return resolve(result);
     }
@@ -59,7 +57,7 @@ export function verifyMessageSignature(rawMessage) {
     }
     catch (ex) {
       result.success = false;
-      result.code = resultCodes.FRAUD_WARNING;
+      result.code = smimeVerificationResultCodes.FRAUD_WARNING;
       result.message = "Fraud warning: Invalid signature.";
       return resolve(result);
     }
@@ -84,7 +82,7 @@ export function verifyMessageSignature(rawMessage) {
 
         if (failed) {
           result.success = false;
-          result.code = resultCodes.FRAUD_WARNING;
+          result.code = smimeVerificationResultCodes.FRAUD_WARNING;
           result.message = "Fraud warning: Message failed verification with signature.";
           return resolve(result);
         }
@@ -93,20 +91,20 @@ export function verifyMessageSignature(rawMessage) {
 
         if (fromNode.address !== signerEmail) {
           result.success = false;
-          result.code = resultCodes.FRAUD_WARNING;
+          result.code = smimeVerificationResultCodes.FRAUD_WARNING;
           result.message = "Fraud warning: The 'From' email address does not match the signature's email address.";
           return resolve(result);
         }
 
         result.success = true;
-        result.code = resultCodes.VERIFICATION_OK;
+        result.code = smimeVerificationResultCodes.VERIFICATION_OK;
         result.message = "Message passed verification.";
         result.signer = signerEmail;
         return resolve(result);
       }).catch(
       error => {
         result.success = false;
-        result.code = resultCodes.CANNOT_VERIFY;
+        result.code = smimeVerificationResultCodes.CANNOT_VERIFY;
         result.message = 'Message cannot be verified: Unknown error.';
         Logger.err(error);
         return resolve(result);
@@ -127,18 +125,18 @@ export function verifyMessageSignature(rawMessage) {
   }
 
   function isRootNodeContentTypeValueCorrect(rootNode) {
-    return specificationConstants.rootNodeContentTypeValue.indexOf(rootNode.contentType.value) !== -1;
+    return smimeSpecificationConstants.rootNodeContentTypeValue.indexOf(rootNode.contentType.value) !== -1;
   }
 
   function isRootNodeContentTypeProtocolCorrect(rootNode) {
-    return rootNode.contentType.params.protocol === specificationConstants.rootNodeContentTypeProtocol;
+    return rootNode.contentType.params.protocol === smimeSpecificationConstants.rootNodeContentTypeProtocol;
   }
 
   function isRootNodeContentTypeMicalgCorrect(rootNode) {
-    return specificationConstants.rootNodeContentTypeMessageIntegrityCheckAlgorithms.indexOf(rootNode.contentType.params.micalg) !== -1;
+    return smimeSpecificationConstants.rootNodeContentTypeMessageIntegrityCheckAlgorithms.indexOf(rootNode.contentType.params.micalg) !== -1;
   }
 
   function isSignatureNodeContentTypeValueCorrect(signatureNode) {
-    return specificationConstants.signatureNodeContentTypeValues.indexOf(signatureNode.contentType.value) !== -1;
+    return smimeSpecificationConstants.signatureNodeContentTypeValues.indexOf(signatureNode.contentType.value) !== -1;
   }
 }
