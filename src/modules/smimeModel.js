@@ -101,6 +101,7 @@ export function verifyMessageSignature(rawMessage) {
         result.success = true;
         result.code = resultCodes.VERIFICATION_OK;
         result.message = "Message passed verification.";
+        result.signer = signerEmail;
         return resolve(result);
       }).catch(
       error => {

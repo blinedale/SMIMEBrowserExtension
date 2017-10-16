@@ -1,7 +1,10 @@
+import * as Base64lib from 'js-base64';
+
 import Config from './config';
 import Logger from '../modules/logger';
 
 const dbConfig = Config.get('db');
+const base64 = Base64lib.Base64;
 
 class DbHandler {
   constructor(dbConfig) {
@@ -80,6 +83,11 @@ class DbHandler {
       request.onsuccess = function(event) {
         Logger.log(`Get query completed for mail id ${mailId}`);
         Logger.log(request.result);
+
+        if (request.result) {
+          request.result.signer = base64.decode(request.result.signer);
+        }
+
         return resolve(request.result);
       };
     });
@@ -97,9 +105,13 @@ class DbHandler {
         return resolve(null);
       }
 
+      // To "censor" the signer's email. Cloning to not cause issues with concurrently running code using the same object.
+      const resultObjectClone = Object.assign({}, resultObject);
+      resultObjectClone.signer =  base64.encode(resultObjectClone.signer);
+
       const transaction = this.db.transaction([dbConfig.stores.results], "readwrite");
       const resultStore = transaction.objectStore(dbConfig.stores.results);
-      const request = resultStore.add(resultObject);
+      const request = resultStore.add(resultObjectClone);
 
       request.onerror = function(event) {
         Logger.err(`Ran into an error when saving result for mail id ${resultObject.mailId}`);

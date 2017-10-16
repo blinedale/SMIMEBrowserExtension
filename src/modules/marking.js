@@ -15,18 +15,21 @@ class Marking {
     };
 
     this.message.addAttachmentIcon(messageAttachmentIconDescriptor);
-    this.addSpan();
+
+    if (this.result.signer) {
+      this.addSigner();
+    }
 
     return this;
   }
 
-  addSpan() {
+  addSigner() {
     const el = document.createElement('span');
     const container = document.getElementsByClassName(this.markedClass);
 
     if (container.length > 0) {
       const index = container[0];
-      el.innerHTML = this.message.getSender().emailAddress;
+      el.innerHTML = this.result.signer;
       el.setAttribute('class', 'smime-sender-email');
       index.parentNode.insertBefore(el, index);
     }

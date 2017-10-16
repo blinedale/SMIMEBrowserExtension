@@ -21,6 +21,7 @@
     "emailjs-mime-builder": "^1.0.1",
     "emailjs-mime-parser": "^1.0.0",
     "gmail-js": "^0.6.11",
+    "js-base64": "^2.3.2",
     "pkijs": "^2.1.6",
     "pvutils": "^1.0.8"
   },
