@@ -1,6 +1,11 @@
-.smime-sender-email {
+.smime-sender-gmail {
+    margin-right: 5px;
     position: relative;
     top: -5px;
     font-weight: bold;
+}
+.smime-sender-inbox {
     margin-right: 5px;
+    font-weight: bold;
+    color: #000;
 }
