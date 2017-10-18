@@ -14,11 +14,13 @@ import smimeVerificationResultCodes from '../constants/smimeVerificationResultCo
  * a conclusive result - in this case we should not persist the result.
  * The returned result object's message is meant to be displayed to the user and should not be too technical.
  * @param rawMessage Full MIME message. Preferably in binary form as this reduces the risk of encoding issues.
+ * @param mailId String with mail id.
  * @returns {Promise}
  */
-export function verifyMessageSignature(rawMessage) {
+export function verifyMessageSignature(rawMessage, mailId) {
   return new Promise(resolve => {
     const result = getResultPrototype();
+    result.mailId = mailId;
     const parser = new MimeParser();
     parser.write(rawMessage);
     parser.end();
@@ -58,7 +60,7 @@ export function verifyMessageSignature(rawMessage) {
     catch (ex) {
       result.success = false;
       result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-      result.message = "Fraud warning: Invalid signature.";
+      result.message = 'Fraud warning: Invalid digital signature.';
       return resolve(result);
     }
 
@@ -74,7 +76,7 @@ export function verifyMessageSignature(rawMessage) {
     sequence.then(
       verificationResult => {
         let failed = false;
-        if (typeof verificationResult !== "undefined") {
+        if (typeof verificationResult !== 'undefined') {
           if (verificationResult === false) {
             failed = true;
           }
@@ -83,7 +85,7 @@ export function verifyMessageSignature(rawMessage) {
         if (failed) {
           result.success = false;
           result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-          result.message = "Fraud warning: Message failed verification with signature.";
+          result.message = 'Fraud warning: Message failed digital signature verification.';
           return resolve(result);
         }
 
@@ -92,13 +94,13 @@ export function verifyMessageSignature(rawMessage) {
         if (fromNode.address !== signerEmail) {
           result.success = false;
           result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-          result.message = "Fraud warning: The 'From' email address does not match the signature's email address.";
+          result.message = 'Fraud warning: The "From" email address does not match the signature\'s email address.';
           return resolve(result);
         }
 
         result.success = true;
         result.code = smimeVerificationResultCodes.VERIFICATION_OK;
-        result.message = "Message passed verification.";
+        result.message = `Message includes a valid digital signature for ${signerEmail}.`;
         result.signer = signerEmail;
         return resolve(result);
       }).catch(
