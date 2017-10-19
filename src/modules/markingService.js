@@ -44,7 +44,7 @@ class MarkingService {
       el.innerHTML = additionalInfoText;
       el.setAttribute('class', 'smime-sender-inbox');
       index.parentNode.insertBefore(el, index);
-      index.parentNode.insertBefore(this.createCustomIcon(iconUrl), index);
+      index.parentNode.insertBefore(this.createCustomIcon(iconUrl, result.message), index);
     }
   }
 
@@ -62,9 +62,10 @@ class MarkingService {
     this.addAdditionalInfoText(markedClassName, additionalInfoText);
   }
 
-  createCustomIcon(iconUrl) {
+  createCustomIcon(iconUrl, message) {
     const el = document.createElement('img');
     el.setAttribute('src', iconUrl);
+    el.setAttribute('title', message);
 
     return el;
   }
