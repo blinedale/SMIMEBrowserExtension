@@ -28,6 +28,7 @@
   ],
   "permissions": [
     "declarativeContent",
+    "https://mail.google.com/*",
     "https://mail-attachment.googleusercontent.com/*"
   ]
 }

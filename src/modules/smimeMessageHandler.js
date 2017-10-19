@@ -1,15 +1,10 @@
-import * as gmailjs from 'gmail-js';
-
 import {verifyMessageSignature} from './smimeModel';
 import DbHandler from './dbHandler';
+import GmailSource from './gmailSource';
 import MarkingService from "./markingService";
 import Logger from './logger';
 
 class SmimeMessageHandler {
-  constructor() {
-    this.gmail = new gmailjs.Gmail();
-  }
-
   handle(domMessage, messageId) {
     DbHandler.getSavedResult(messageId).then(resultObject => {
       if (resultObject) {
@@ -19,11 +14,9 @@ class SmimeMessageHandler {
       }
 
       // No saved result for this messageId. Let's fetch message source and verify it.
-      this.gmail.get.email_source_async(messageId,
-        (rawMessage => this.verifyAndMark(rawMessage, messageId, domMessage)),
-        (err => Logger.err(err)),
-        true
-      );
+      GmailSource.getRawMessage(messageId, true)
+      .then(rawMessage => this.verifyAndMark(rawMessage, messageId, domMessage))
+      .catch(err => Logger.err(err));
     });
   }
 
