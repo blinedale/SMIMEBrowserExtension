@@ -11,10 +11,6 @@
     "64": "img/extension-64.png",
     "128": "img/extension-128.png"
   },
-  "background": {
-    "scripts": ["background.js"],
-    "persistent": false
-  },
   "web_accessible_resources": [
     "img/*.png",
     "config.json"
@@ -26,6 +22,11 @@
       "js": ["lib/inboxsdk.js", "content-scripts/cs-bundle.js"]
     }
   ],
+  "browser_action": {
+    "default_title": "S/MIME Signature Verification for Gmail",
+    "default_icon": "img/extension-16.png",
+    "default_popup": "components/aboutPopup.html"
+  },
   "permissions": [
     "declarativeContent",
     "https://mail.google.com/*",

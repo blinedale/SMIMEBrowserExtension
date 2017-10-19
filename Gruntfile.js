@@ -15,9 +15,8 @@ module.exports = function(grunt) {
       target: [
         '*.js',
         'src/**/*.js',
-        'tests/**/*.js',
-        '!src/lib/*',
-        '!src/chrome/background.js'
+        'test/**/*.js',
+        '!src/lib/*'
       ]
     },
 
@@ -50,9 +49,10 @@ module.exports = function(grunt) {
           cwd: 'src/',
           src: [
             'content-scripts/*.css',
-            'lib/*',
+            'components/*',
             'css/*',
-            'img/*'
+            'img/*',
+            'lib/*'
           ],
           dest: 'build/tmp'
         }]
