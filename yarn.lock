@@ -1808,12 +1808,6 @@ globule@^1.0.0:
     lodash "~4.17.4"
     minimatch "~3.0.2"
 
-gmail-js@^0.6.11:
-  version "0.6.11"
-  resolved "https://registry.yarnpkg.com/gmail-js/-/gmail-js-0.6.11.tgz#e26d109e08f30759a33651d2abbd65f75884d801"
-  dependencies:
-    jquery "^1.10.2"
-
 graceful-fs@^4.1.0, graceful-fs@^4.1.2, graceful-fs@^4.1.4:
   version "4.1.11"
   resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.1.11.tgz#0e8bdfe4d1ddb8854d64e04ea7c00e2a026e5658"
@@ -2311,10 +2305,6 @@ isobject@^3.0.1:
 isstream@~0.1.2:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/isstream/-/isstream-0.1.2.tgz#47e63f7af55afa6f92e1500e690eb8b8529c099a"
-
-jquery@^1.10.2:
-  version "1.12.4"
-  resolved "https://registry.yarnpkg.com/jquery/-/jquery-1.12.4.tgz#01e1dfba290fe73deba77ceeacb0f9ba2fec9e0c"
 
 js-base64@^2.3.2:
   version "2.3.2"
