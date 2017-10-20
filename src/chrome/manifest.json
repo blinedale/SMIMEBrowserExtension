@@ -18,6 +18,7 @@
   "content_scripts": [
     {
       "matches": ["*://mail.google.com/*", "*://inbox.google.com/*"],
+      "exclude_matches": ["*://mail.google.com/mail/mu/*"],
       "css": ["css/style.css"],
       "js": ["lib/inboxsdk.js", "content-scripts/cs-bundle.js"]
     }
