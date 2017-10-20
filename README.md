@@ -2,7 +2,7 @@
 
 A simple browser extension that verifies emails signed with S/MIME signatures in Gmail and Google Inbox. Made by Eric Nordebäck and Sergiu Tomşa for Rocket Internet SE.
 
-Currently only supporting Chrome.   
+Currently supporting the desktop versions of Gmail and Google Inbox in Chrome.  
 
 ## Build commands
 ```yarn``` to install deps.
@@ -19,7 +19,7 @@ Install your local dev version in Chrome as per usual by going to chrome://exten
 
 ## How it works
 
-After install, you'll see a Rocket icon in the top right. This icon is only active whenever the current tab is on Gmail or Google Inbox. 
+After install, you'll see a new document icon with a padlock in the top right. The extension is only active when accessing Gmail or Google Inbox. 
 
 As a user, you don't need to do anything - everything happens behind the scenes. Whenever you open an email, the extension will fetch the full source code of that email and run it through our verification system to check if it...
 
@@ -36,8 +36,11 @@ Marking is done in the upper right of each email. Note that any email in a threa
 
 Verification results are stored in the local IndexedDB in the browser so we do not have to re-run verification once a certain email is re-opened.
 
+Note that we currently do not check if a certificate has been revoked during verification. This means that emails signed with revoked certificates will show up as valid if everything else checks out.
+
 ## Road map
 
+- Checking if a certificate is revoked during verification
 - Firefox build
 - Possibly releasing this project as open source
 - Upload to Chrome Web Store

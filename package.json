@@ -1,6 +1,6 @@
 {
   "name": "rocket-smime-browser-extension",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Verifies S/MIME emails in Gmail in your browser.",
   "scripts": {
     "test": "jest tests/*"

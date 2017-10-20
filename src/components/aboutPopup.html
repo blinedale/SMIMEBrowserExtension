@@ -42,14 +42,16 @@
 <div id="smime-popup-container">
   <div id="smime-popup-title">S/MIME Signature Verification for Gmail</div>
   <div class="smime-popup-content">
-    <p>A simple browser extension that verifies emails signed with S/MIME signatures in Gmail and Google Inbox.</p>
+    <p>A simple browser extension that verifies emails signed with S/MIME signatures in the desktop versions of Gmail and Google Inbox.</p>
     <p>Made by Eric Nordeb&#228;ck and Sergiu Tom&#x15F;a for <a href="https://www.rocket-internet.com" target="_blank">Rocket Internet SE</a>.</p>
   </div>
   <div class="smime-popup-content">
     <p class="label">How it works</p>
     <p>The plugin will ignore messages that are not signed with S/MIME.</p>
-    <p>If a message has a valid signature that matches the message content and the 'From' address matches the signer's email in the certificate that email will be marked as verified.</p>
+    <p>If a message has a valid signature that matches the message content and the 'From' address matches the signer's email in the certificate, that email will be marked as verified.</p>
+    <p>Message that look signed but where the verification fails for some reason will be marked with a fraud warning.</p>
     <p>Please note that any email in a thread has to be opened completely to trigger a verification; we do not verify emails that are collapsed or hidden in previous thread history.</p>
+    <p>Also, we currently do not check if a certificate has been revoked while verifying a message signature. Messages signed with a revoked certificate will currently be shown as verified if everything else checks out. We are working on adding this functionality.</p>
   </div>
   <div class="smime-popup-content">
     <p class="label">Attributions</p>
