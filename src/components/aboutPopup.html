@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+<head>
+  <title>About</title>
+  <style>
+    body {
+      min-width: 360px;
+      margin: 5px 10px;
+      font-family: Segoe UI, Arial, sans-serif;
+      font-size: 13px;
+      color: #545454;
+      background-color: #f8f6f2;
+    }
+    a {
+      color: #333333;
+    }
+    #smime-popup-container {
+      width: auto;
+      height: auto;
+    }
+    #smime-popup-title {
+      margin: 10px 0;
+      font-weight: bold;
+      font-size: 14px;
+      text-align: center;
+      font-family: Arial, Verdana, sans-serif;
+    }
+    .smime-popup-content {
+      margin-bottom: 20px;
+      font-size: 12px;
+      font-family: Arial, Verdana, sans-serif;
+    }
+    .smime-popup-content p {
+      line-height: 12px;
+    }
+    .smime-popup-content p.label {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+<div id="smime-popup-container">
+  <div id="smime-popup-title">S/MIME Signature Verification for Gmail</div>
+  <div class="smime-popup-content">
+    <p>A simple browser extension that verifies emails signed with S/MIME signatures in Gmail and Google Inbox.</p>
+    <p>Made by Eric Nordeb&#228;ck and Sergiu Tom&#x15F;a for <a href="https://www.rocket-internet.com" target="_blank">Rocket Internet SE</a>.</p>
+  </div>
+  <div class="smime-popup-content">
+    <p class="label">How it works</p>
+    <p>The plugin will ignore messages that are not signed with S/MIME.</p>
+    <p>If a message has a valid signature that matches the message content and the 'From' address matches the signer's email in the certificate that email will be marked as verified.</p>
+    <p>Please note that any email in a thread has to be opened completely to trigger a verification; we do not verify emails that are collapsed or hidden in previous thread history.</p>
+  </div>
+  <div class="smime-popup-content">
+    <p class="label">Attributions</p>
+    <p><a href="https://www.flaticon.com/free-icon/checked_179372" target="_blank">Checked free icon</a> made by <a href="https://www.flaticon.com/authors/pixel-buddha" target="_blank">Pixel Buddha</a>.
+    <p><a href="https://www.flaticon.com/free-icon/cancel_179429" target="_blank">Cancel free icon</a> made by <a href="https://www.flaticon.com/authors/pixel-buddha" target="_blank">Pixel Buddha</a>.
+    <p><a href="https://www.flaticon.com/free-icon/file_137661" target="_blank">File free icon</a> made by <a href="https://www.flaticon.com/authors/smashicons" target="_blank">Smashicons</a>.
+    <p>All icons listed are available at <a href="https://www.flaticon.com" target="_blank">Flaticon</a> and are licensed under [Creative Commons BY 3.0]</p>
+    <p>The functionality to fetch the full email source code was re-used from <a href="https://github.com/KartikTalwar/gmail.js" target="_blank">gmail.js</a> under their <a href="https://github.com/KartikTalwar/gmail.js/blob/master/LICENSE.md" target="_blank">MIT License</a> (Copyright (c) 2014 Kartik Talwar).</p>
+    <p>The base library for catching events and manipulating the UI in Gmail and Inbox is <a href="https://www.inboxsdk.com" target="_blank">InboxSDK</a> which we are using as per their <a href="https://www.inboxsdk.com/terms" target="_blank">terms and conditions</a>.</p>
+  </div>
+</div>
+</body>
+</html>
