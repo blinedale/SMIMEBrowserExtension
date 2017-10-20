@@ -4,7 +4,7 @@ module.exports = function(grunt) {
 
   grunt.initConfig({
 
-    clean: ['build/**/*'],
+    clean: ['build/**/*', 'dist/*'],
 
     eslint: {
       options: {
@@ -27,6 +27,17 @@ module.exports = function(grunt) {
           cwd: 'src/',
           src: [
             'chrome/*'
+          ],
+          dest: 'build/'
+        }]
+      },
+
+      firefox: {
+        files: [{
+          expand: true,
+          cwd: 'src/',
+          src: [
+            'firefox/*'
           ],
           dest: 'build/'
         }]
@@ -65,6 +76,15 @@ module.exports = function(grunt) {
           src: '**/*',
           dest: 'build/chrome'
         }]
+      },
+
+      tmp2firefox: {
+        files: [{
+          expand: true,
+          cwd: 'build/tmp/',
+          src: '**/*',
+          dest: 'build/firefox'
+        }]
       }
     },
 
@@ -79,6 +99,18 @@ module.exports = function(grunt) {
           expand: true,
           cwd: 'build/',
           src: ['chrome/**/*', 'chrome/!**/.*']
+        }]
+      },
+      firefox: {
+        options: {
+          mode: 'zip',
+          archive: 'dist/RocketSMIMEBrowserExtension.firefox.zip',
+          pretty: true
+        },
+        files: [{
+          expand: true,
+          cwd: 'build/',
+          src: ['firefox/**/*', 'firefox/!**/.*']
         }]
       },
     },
@@ -101,6 +133,41 @@ module.exports = function(grunt) {
           patterns: [{
             match: 'build_version',
             replacement: pkg.version
+          }, {
+            match: 'description_text',
+            replacement: pkg.description
+          }, {
+            match: 'name_text',
+            replacement: pkg.name_text
+          }, {
+            match: 'homepage_text',
+            replacement: pkg.homepage
+          }, {
+            match: 'short_name_text',
+            replacement: pkg.short_name_text
+          }]
+        }
+      },
+
+      version_firefox: {
+        src: 'build/firefox/manifest.json',
+        dest: 'build/firefox/manifest.json',
+        options: {
+          patterns: [{
+            match: 'build_version',
+            replacement: pkg.version
+          }, {
+            match: 'description_text',
+            replacement: pkg.description
+          }, {
+            match: 'name_text',
+            replacement: pkg.name_text
+          }, {
+            match: 'homepage_text',
+            replacement: pkg.homepage
+          }, {
+            match: 'short_name_text',
+            replacement: pkg.short_name_text
           }]
         }
       },
@@ -136,8 +203,8 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-webpack');
 
   // development build
-  grunt.registerTask('default', ['clean', 'eslint', 'copy:chrome', 'copy:config', 'copy:common', 'webpack:build', 'copy:tmp2chrome', 'replace:version_chrome', 'compress:chrome']);
+  grunt.registerTask('default', ['clean', 'eslint', 'copy:chrome', 'copy:firefox', 'copy:config', 'copy:common', 'webpack:build', 'copy:tmp2chrome', 'copy:tmp2firefox', 'replace:version_chrome', 'replace:version_firefox', 'compress:chrome', 'compress:firefox']);
 
-  // production build
-  grunt.registerTask('prod', ['clean', 'eslint', 'copy:chrome', 'copy:config', 'copy:common', 'webpack:build', 'replace:debugMode_off', 'copy:tmp2chrome', 'replace:version_chrome', 'compress:chrome']);
+  // production build - should be same as above except we run replace:debugMode_off in the middle
+  grunt.registerTask('prod', ['clean', 'eslint', 'copy:chrome', 'copy:firefox', 'copy:config', 'copy:common', 'webpack:build', 'replace:debugMode_off', 'copy:tmp2chrome', 'copy:tmp2firefox', 'replace:version_chrome', 'replace:version_firefox', 'compress:chrome', 'compress:firefox']);
 };

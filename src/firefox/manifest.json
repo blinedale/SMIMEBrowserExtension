@@ -19,18 +19,11 @@
   "content_scripts": [
     {
       "matches": ["*://mail.google.com/*", "*://inbox.google.com/*"],
-      "exclude_matches": ["*://mail.google.com/mail/mu/*"],
       "css": ["css/style.css"],
       "js": ["lib/inboxsdk.js", "content-scripts/cs-bundle.js"]
     }
   ],
-  "browser_action": {
-    "default_title": "S/MIME Signature Verification for Gmail",
-    "default_icon": "img/extension-16.png",
-    "default_popup": "components/aboutPopup.html"
-  },
   "permissions": [
-    "declarativeContent",
     "https://mail.google.com/*",
     "https://mail-attachment.googleusercontent.com/*"
   ]
