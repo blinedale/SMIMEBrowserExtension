@@ -1,11 +1,10 @@
 import * as Base64lib from 'js-base64';
 
-import Config from '../modules/config';
-import SmimeMessageHandler from '../modules/smimeMessageHandler';
+import {smimeMessageHandler, configService} from '../modules';
 
 const base64 = Base64lib.Base64;
 
-const inboxSDKConfig = Config.get('inboxSDK');
+const inboxSDKConfig = configService.get('inboxSDK');
 const inboxSDKApiVersion = inboxSDKConfig.API_VERSION;
 const inboxSDKApiKey = base64.decode(inboxSDKConfig.API_KEY);
 
@@ -13,7 +12,7 @@ const inboxSDKApiKey = base64.decode(inboxSDKConfig.API_KEY);
 InboxSDK.load(inboxSDKApiVersion, inboxSDKApiKey).then(sdk => {
   sdk.Conversations.registerMessageViewHandler(domMessage => {
     domMessage.getMessageIDAsync().then(messageId => {
-      SmimeMessageHandler.handle(domMessage, messageId);
+      smimeMessageHandler.handle(domMessage, messageId);
     });
   });
 });

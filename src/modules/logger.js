@@ -1,7 +1,3 @@
-import Config from '../modules/config';
-
-const loggerConfig = Config.get('application').logger;
-
 class Logger {
   constructor(loggerConfig) {
     this.prefix = loggerConfig.prefix || '';
@@ -29,4 +25,4 @@ class Logger {
   }
 }
 
-export default new Logger(loggerConfig);
+export default Logger;

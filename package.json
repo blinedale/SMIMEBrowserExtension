@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Verifies S/MIME emails in Gmail in your browser.",
   "scripts": {
-    "watch": "webpack ./index.js --output-filename='./build/bundle.js' --watch"
+    "test": "jest tests/*"
   },
   "repository": {
     "type": "git",
@@ -17,13 +17,17 @@
   "homepage": "https://github.com/rocket-internet-berlin/RocketSMIMEBrowserExtension#readme",
   "dependencies": {
     "asn1js": "^2.0.15",
-    "emailjs-mime-builder": "^1.0.1",
     "emailjs-mime-parser": "^1.0.0",
     "js-base64": "^2.3.2",
     "pkijs": "^2.1.6",
     "pvutils": "^1.0.8"
   },
   "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-eslint": "^8.0.1",
+    "babel-jest": "^21.2.0",
+    "babel-preset-env": "^1.6.0",
+    "emailjs-mime-builder": "^1.0.1",
     "grunt": "^1.0.1",
     "grunt-contrib-clean": "^1.1.0",
     "grunt-contrib-compress": "^1.4.3",
@@ -32,6 +36,40 @@
     "grunt-eslint": "^20.1.0",
     "grunt-replace": "^1.0.1",
     "grunt-webpack": "^3.0.2",
+    "jest": "^21.2.1",
+    "sinon": "^4.0.1",
+    "sinon-stub-promise": "^4.0.0",
     "webpack": "^3.7.1"
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.js"
+    ],
+    "testPathIgnorePatterns": [
+      "<rootDir>[/\\\\](build|docs|node_modules|scripts|server)[/\\\\]"
+    ],
+    "modulePathIgnorePatterns": [
+      "<rootDir>[/\\\\](build|docs|node_modules|scripts|server)[/\\\\]"
+    ],
+    "testEnvironment": "node",
+    "testURL": "http://localhost",
+    "transform": {
+      "^.+\\.(js|jsx)$": "<rootDir>/node_modules/babel-jest"
+    },
+    "transformIgnorePatterns": [
+      "[/\\\\]node_modules[/\\\\].+\\.(js|jsx)$"
+    ]
+  },
+  "babel": {
+    "presets": [
+      [
+        "env",
+        {
+          "targets": {
+            "node": "current"
+          }
+        }
+      ]
+    ]
   }
 }

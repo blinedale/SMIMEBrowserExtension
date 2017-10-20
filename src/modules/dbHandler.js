@@ -1,19 +1,17 @@
 import * as Base64lib from 'js-base64';
 
-import Config from './config';
-import Logger from '../modules/logger';
-
-const dbConfig = Config.get('db');
 const base64 = Base64lib.Base64;
 
 class DbHandler {
-  constructor(dbConfig) {
+  constructor(dbConfig, loggerService) {
     this.db = null;
+    this.dbConfig = dbConfig;
+    this.loggerService = loggerService;
 
-    this.getDb(dbConfig).then(db => { this.db = db; });
+    this.getDb().then(db => { this.db = db; });
 
     // eslint-disable-next-line no-unused-vars
-    window.onunload = function(e) {
+    window.onunload = () => {
       this.closeConnection();
       return false;
     };
@@ -24,29 +22,29 @@ class DbHandler {
    * wrong; we just return null and are done with it.
    * @returns {Promise}
    */
-  getDb(dbConfig) {
+  getDb() {
     return new Promise(resolve => {
       if (!window.indexedDB) {
         return resolve(null);
       }
 
-      const request = window.indexedDB.open(dbConfig.dbName, dbConfig.dbVersion);
+      const request = window.indexedDB.open(this.dbConfig.dbName, this.dbConfig.dbVersion);
 
-      request.onerror = function(event) {
-        Logger.err('Error while creating database connector.');
-        Logger.err(event);
+      request.onerror = event => {
+        this.loggerService.err('Error while creating database connector.');
+        this.loggerService.err(event);
         return resolve(null);
       };
 
       let dbConnection = null;
 
       // Upgrade/create db as needed
-      request.onupgradeneeded = function(event) {
+      request.onupgradeneeded = event => {
         dbConnection = request.result;
         if (event.oldVersion < 1) {
           // There is no old version - creating db and store from scratch
-          dbConnection.createObjectStore(dbConfig.stores.results, {keyPath: "mailId"});
-          Logger.log('Created database successfully.');
+          dbConnection.createObjectStore(this.dbConfig.stores.results, {keyPath: "mailId"});
+          this.loggerService.log('Created database successfully.');
         }
         if (event.oldVersion < 2) {
           // In future versions we'd upgrade our database here.
@@ -55,9 +53,9 @@ class DbHandler {
 
       /* This is always run if the request to open the db connection is granted, regardless if we need to upgrade the db
          or not. In that case it is run after the upgrade is done. */
-      request.onsuccess = function(event) {
+      request.onsuccess = event => {
         dbConnection = event.target.result;
-        Logger.log('Created database connector.');
+        this.loggerService.log('Created database connector.');
         return resolve(dbConnection);
       };
     });
@@ -66,29 +64,29 @@ class DbHandler {
   getSavedResult(mailId) {
     return new Promise(resolve => {
       if (!this.db) {
-        Logger.err(`Tried to get result for mail id ${mailId} but there is no database connection.`);
+        this.loggerService.err(`Tried to get result for mail id ${mailId} but there is no database connection.`);
         return resolve(null);
       }
 
       if (!mailId) {
-        Logger.err(`Tried to get result for mail id ${mailId} but an empty or invalid mail id was passed.`);
+        this.loggerService.err(`Tried to get result for mail id ${mailId} but an empty or invalid mail id was passed.`);
         return resolve(null);
       }
 
-      const transaction = this.db.transaction([dbConfig.stores.results], "readonly");
-      const resultStore = transaction.objectStore(dbConfig.stores.results);
+      const transaction = this.db.transaction([this.dbConfig.stores.results], "readonly");
+      const resultStore = transaction.objectStore(this.dbConfig.stores.results);
       const request = resultStore.get(mailId);
 
-      request.onerror = function(event) {
-        Logger.err(`Ran into an error when getting result for mail id ${mailId}`);
-        Logger.err(event);
+      request.onerror = event => {
+        this.loggerService.err(`Ran into an error when getting result for mail id ${mailId}`);
+        this.loggerService.err(event);
         return resolve(null);
       };
 
       // eslint-disable-next-line no-unused-vars
-      request.onsuccess = function(event) {
-        Logger.log(`Get query completed for mail id ${mailId}`);
-        Logger.log(request.result);
+      request.onsuccess = event => {
+        this.loggerService.log(`Get query completed for mail id ${mailId}`);
+        this.loggerService.log(request.result);
 
         if (request.result) {
           request.result.signer = base64.decode(request.result.signer);
@@ -102,12 +100,12 @@ class DbHandler {
   saveResult(resultObject) {
     return new Promise(resolve => {
       if (!this.db) {
-        Logger.err(`Tried to save a verification result but there is no database connection.`);
+        this.loggerService.err(`Tried to save a verification result but there is no database connection.`);
         return resolve(null);
       }
 
       if (!resultObject || !resultObject.mailId) {
-        Logger.err(`Tried to save result for a mail id an invalid result object was passed.`);
+        this.loggerService.err(`Tried to save result for a mail id an invalid result object was passed.`);
         return resolve(null);
       }
 
@@ -115,30 +113,30 @@ class DbHandler {
       const resultObjectClone = Object.assign({}, resultObject);
       resultObjectClone.signer =  base64.encode(resultObjectClone.signer);
 
-      const transaction = this.db.transaction([dbConfig.stores.results], "readwrite");
-      const resultStore = transaction.objectStore(dbConfig.stores.results);
+      const transaction = this.db.transaction([this.dbConfig.stores.results], "readwrite");
+      const resultStore = transaction.objectStore(this.dbConfig.stores.results);
       const request = resultStore.add(resultObjectClone);
 
-      request.onerror = function(event) {
-        Logger.err(`Ran into an error when saving result for mail id ${resultObject.mailId}`);
-        Logger.err(event);
+      request.onerror = event => {
+        this.loggerService.err(`Ran into an error when saving result for mail id ${resultObject.mailId}`);
+        this.loggerService.err(event);
         return resolve(null);
       };
 
       // eslint-disable-next-line no-unused-vars
-      request.onsuccess = function(event) {
-        Logger.log(`Save success for mail id ${resultObject.mailId}`);
+      request.onsuccess = event => {
+        this.loggerService.log(`Save success for mail id ${resultObject.mailId}`);
         return resolve(request.result);
       };
     });
   }
 
   closeConnection() {
-    Logger.log('Closing database connection.');
+    this.loggerService.log('Closing database connection.');
     if (this.db) {
       this.db.close();
     }
   }
 }
 
-export default new DbHandler(dbConfig);
+export default DbHandler;
