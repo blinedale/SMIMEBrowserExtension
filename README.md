@@ -41,7 +41,7 @@ Note that we currently do not check if a certificate has been revoked during ver
 ## Road map
 
 - Checking if a certificate is revoked during verification
-- Firefox build
+- Working Firefox build (current Firefox version is broken due to incompatibility with InboxSDK)
 - Possibly releasing this project as open source
 - Upload to Chrome Web Store
 

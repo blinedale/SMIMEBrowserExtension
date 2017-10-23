@@ -19,5 +19,6 @@ const smimeMessageHandler = new SmimeMessageHandler(dbHandler, markingService, s
 
 export {
   configService,
+  loggerService,
   smimeMessageHandler
 };

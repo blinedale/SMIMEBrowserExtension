@@ -1,6 +1,6 @@
 import * as Base64lib from 'js-base64';
 
-import {smimeMessageHandler, configService} from '../modules';
+import {smimeMessageHandler, configService, loggerService} from '../modules';
 
 const base64 = Base64lib.Base64;
 
@@ -9,10 +9,16 @@ const inboxSDKApiVersion = inboxSDKConfig.API_VERSION;
 const inboxSDKApiKey = base64.decode(inboxSDKConfig.API_KEY);
 
 // eslint-disable-next-line no-undef
-InboxSDK.load(inboxSDKApiVersion, inboxSDKApiKey).then(sdk => {
+InboxSDK.load(inboxSDKApiVersion, inboxSDKApiKey)
+.then(sdk => {
   sdk.Conversations.registerMessageViewHandler(domMessage => {
     domMessage.getMessageIDAsync().then(messageId => {
       smimeMessageHandler.handle(domMessage, messageId);
     });
   });
+})
+.catch(error => {
+  // This currently happens for Firefox as InboxSDK uses some WebKit specific code.
+  loggerService.err('Could not load InboxSDK. ');
+  loggerService.err(error);
 });
