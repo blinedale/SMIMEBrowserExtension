@@ -63,7 +63,7 @@ class SmimeVerificationService {
       const signedDataBuffer = stringToArrayBuffer(parser.nodes.node1.raw.replace(/\n/g, "\r\n"));
 
       // Verify the signed data
-      cmsSignedSimpl.verify({signer: 0, data: signedDataBuffer}).then(
+      cmsSignedSimpl.verify({signer: 0, data: signedDataBuffer, checkChain: true}).then(
         verificationResult => {
           result.signer = signerEmail;
 
@@ -88,6 +88,7 @@ class SmimeVerificationService {
         }).catch(
         // eslint-disable-next-line no-unused-vars
         error => {
+          console.log(error);
           result.success = false;
           result.code = smimeVerificationResultCodes.CANNOT_VERIFY;
           result.message = 'Message cannot be verified: Unknown error.';
