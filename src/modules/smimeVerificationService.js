@@ -1,7 +1,7 @@
 import MimeParser from 'emailjs-mime-parser';
 import {stringToArrayBuffer, utilConcatBuf} from 'pvutils';
 import * as asn1js from 'asn1js';
-import {SignedData, ContentInfo} from 'pkijs';
+import { SignedData, ContentInfo, CertificateRevocationList } from 'pkijs';
 
 import getResultPrototype from './resultPrototype';
 import smimeSpecificationConstants from '../constants/smimeSpecificationConstants';
@@ -40,6 +40,8 @@ class SmimeVerificationService {
 
       let cmsSignedSimpl = null;
       let signerEmail = '';
+      let crlDistPoint = '';
+      let extension = null;
 
       try {
         // Get signature buffer
@@ -51,12 +53,52 @@ class SmimeVerificationService {
 
         // Get signer's email address from signature
         signerEmail = cmsSignedSimpl.certificates[0].subject.typesAndValues[0].value.valueBlock.value;
+
+        for (let i = 0 ; i < cmsSignedSimpl.certificates[0].extensions.length ; i++) {
+          extension = cmsSignedSimpl.certificates[0].extensions[i];
+
+          if (extension.extnID === '2.5.29.31') {
+            //this is by definition the CRL distribution list
+            crlDistPoint = extension.parsedValue.distributionPoints[0].distributionPoint[0].value;
+            break;
+          }
+
+        }
       }
       catch (ex) {
         result.success = false;
         result.code = smimeVerificationResultCodes.FRAUD_WARNING;
         result.message = 'Fraud warning: Invalid digital signature.';
         return resolve(result);
+      }
+
+      console.log('signed data');
+      console.log(cmsSignedSimpl);
+      console.log(crlDistPoint);
+
+      try {
+        chrome.runtime.sendMessage({crlDistPoint}, response => {
+          console.log('got raw crl data');
+
+          console.log(response);
+
+          const crlBuffer = stringToArrayBuffer(response.rawCrlBag);
+
+
+//          const crlBagAsn1 = this.getAsn1TypeFromBuffer(crlBuffer);
+
+          const crlBagAsn1 = asn1js.fromBER(crlBuffer);
+
+          console.log(crlBagAsn1);
+
+
+          const crlObj = new CertificateRevocationList({schema: crlBagAsn1.result});
+
+
+          console.log(crlObj);
+        });
+      } catch (ex){
+        throw Error('Could not fetch CRL');
       }
 
       // Get content of email that was signed. Should be entire first child node.
