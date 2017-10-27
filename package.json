@@ -1,9 +1,9 @@
 {
   "name": "rocket-smime-browser-extension",
   "version": "1.0.0",
-  "name_text": "S/MIME Signature Verification for Gmail and Inbox",
-  "short_name_text": "S/MIME Signature Verification",
-  "description": "Verifies S/MIME signed emails in Google Mail and Inbox. Made by Rocket Internet SE.",
+  "name_text": "Rocket Internet S/MIME Signature Verifier",
+  "short_name_text": "S/MIME Signature Verifier",
+  "description": "Verifies S/MIME signed emails in Google Mail and Inbox. Made by Rocket Internet.",
   "scripts": {
     "test": "jest tests/*"
   },
