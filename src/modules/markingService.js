@@ -8,47 +8,36 @@ class MarkingService {
     }
 
     const iconUrl = chrome.runtime.getURL(this.getIconPath(result));
-    const additionalInfoText = this.getSignerInfoText(result);
+    const infoText = this.getInfoText(result);
 
     if (this.isInbox()) { // inbox mode activated
-      this.markForInbox(domMessage, result, iconUrl, additionalInfoText);
+      this.markForInbox(domMessage, result, iconUrl, infoText);
     } else { // gmail mode activated
-      this.markForGmail(domMessage, result, iconUrl, additionalInfoText);
+      this.markForGmail(domMessage, result, iconUrl, infoText);
     }
   }
 
-  markForInbox(domMessage, result, iconUrl, additionalInfoText) {
-    domMessage.addAttachmentCardView({
-      title: result.message,
-      description: result.message,
-      previewUrl: iconUrl,
-      previewThumbnailUrl: iconUrl,
-      failoverPreviewIconUrl: iconUrl,
-      previewOnClick: e => {
-        e.preventDefault();
-      },
-      fileIconImageUrl: iconUrl,
-      buttons: [],
-      foldColor: '#55988D',
-      mimeType: null
-    });
-    const attachmentCards = document.getElementsByClassName('inboxsdk__attachment_card_hover_overlay');
-    if (attachmentCards.length) {
-      Array.from(attachmentCards).forEach(card => {
-        card.parentNode.style.display = "none";
-      });
+  markForInbox(domMessage, result, iconUrl, infoText) {
+    // From body element, find the header.
+    // Last child of header is the date element.
+    // Insert our stuff as children of header before the date element.
 
-      const index = this.getClosestMatchingElement(attachmentCards[0], '.s2')
-      .firstElementChild.firstElementChild.nextElementSibling.nextElementSibling;
-      const el = document.createElement('span');
-      el.innerHTML = additionalInfoText;
-      el.setAttribute('class', 'smime-sender-inbox');
-      index.parentNode.insertBefore(el, index);
-      index.parentNode.insertBefore(this.createCustomIcon(iconUrl, result.message), index);
-    }
+    const bodyElement = domMessage.getBodyElement();
+
+    const bodyParent = bodyElement.parentElement;
+
+    const headerElement = bodyParent.firstElementChild;
+
+    const headerDateElement = headerElement.lastElementChild;
+
+    const el = document.createElement('span');
+    el.innerHTML = infoText;
+    el.setAttribute('class', 'smime-sender-inbox');
+    headerElement.insertBefore(el, headerDateElement);
+    headerElement.insertBefore(this.createCustomIcon(iconUrl, result.message), headerDateElement);
   }
 
-  markForGmail(domMessage, result, iconUrl, additionalInfoText) {
+  markForGmail(domMessage, result, iconUrl, infoText) {
     const markedClassName = `smime-mark-${result.mailId}`;
 
     const messageAttachmentIconDescriptor = {
@@ -59,7 +48,7 @@ class MarkingService {
 
     domMessage.addAttachmentIcon(messageAttachmentIconDescriptor);
 
-    this.addAdditionalInfoText(markedClassName, additionalInfoText);
+    this.addInfoText(markedClassName, infoText);
   }
 
   createCustomIcon(iconUrl, message) {
@@ -78,7 +67,7 @@ class MarkingService {
     return false;
   }
 
-  addAdditionalInfoText(markedClassName, infoText) {
+  addInfoText(markedClassName, infoText) {
     const el = document.createElement('span');
     const container = document.getElementsByClassName(markedClassName);
 
@@ -90,43 +79,20 @@ class MarkingService {
     }
   }
 
-  getSignerInfoText(result) {
-    let infoText = result.signer; // For smimeVerificationResultCodes.VERIFICATION_OK
-
-    if (result.code === smimeVerificationResultCodes.FRAUD_WARNING) {
-      infoText = 'Fraud warning!';
+  getInfoText(result) {
+    // CANNOT_VERIFY does not trigger marking and does not need its own info text.
+    switch (result.code) {
+      case smimeVerificationResultCodes.FRAUD_WARNING:
+        return 'Fraud warning!';
+      case smimeVerificationResultCodes.VERIFICATION_OK:
+        return result.signer;
+      default:
+        return '';
     }
-
-    return infoText;
   }
 
   getIconPath(result) {
     return `img/${result.code.toLowerCase()}.png`;
-  }
-
-  getClosestMatchingElement(elem, selector) {
-    if (!Element.prototype.matches) { // Element.matches() polyfill
-      Element.prototype.matches =
-        Element.prototype.matchesSelector ||
-        Element.prototype.mozMatchesSelector ||
-        Element.prototype.msMatchesSelector ||
-        Element.prototype.oMatchesSelector ||
-        Element.prototype.webkitMatchesSelector ||
-        function(s) {
-          const matches = (this.document || this.ownerDocument).querySelectorAll(s);
-          let i = matches.length;
-          while (--i >= 0 && matches.item(i) !== this) {
-            return i > -1;
-          }
-        };
-    }
-
-    for (; elem && elem !== document; elem = elem.parentNode) {
-      if (elem.matches(selector)) {
-        return elem;
-      }
-    }
-    return null;
   }
 }
 
