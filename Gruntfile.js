@@ -2,6 +2,9 @@ module.exports = function(grunt) {
   const webpackConfig = require('./webpack.config');
   const pkg = grunt.file.readJSON('package.json');
 
+  const zipPath = 'dist/';
+  const zipFileNamePrefix = 'RocketSMIMEBrowserExtension-';
+
   grunt.initConfig({
 
     clean: ['build/**/*', 'dist/*'],
@@ -92,7 +95,7 @@ module.exports = function(grunt) {
       chrome: {
         options: {
           mode: 'zip',
-          archive: 'dist/RocketSMIMEBrowserExtension.chrome.zip',
+          archive: `${zipPath}${zipFileNamePrefix}${pkg.version}.chrome.zip`,
           pretty: true
         },
         files: [{
@@ -104,7 +107,7 @@ module.exports = function(grunt) {
       firefox: {
         options: {
           mode: 'zip',
-          archive: 'dist/RocketSMIMEBrowserExtension.firefox.zip',
+          archive: `${zipPath}${zipFileNamePrefix}${pkg.version}.firefox.zip`,
           pretty: true
         },
         files: [{
@@ -116,7 +119,6 @@ module.exports = function(grunt) {
     },
 
     replace: {
-
       about_popup: {
         src: 'build/tmp/components/aboutPopup.html',
         dest: 'build/tmp/components/aboutPopup.html',
