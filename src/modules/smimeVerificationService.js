@@ -1,13 +1,28 @@
 import MimeParser from 'emailjs-mime-parser';
-import {stringToArrayBuffer, utilConcatBuf} from 'pvutils';
+import {stringToArrayBuffer, toBase64, arrayBufferToString, utilConcatBuf} from 'pvutils';
 import * as asn1js from 'asn1js';
-import {SignedData, ContentInfo} from 'pkijs';
+import {
+  AttributeTypeAndValue,
+  SignedData,
+  ContentInfo,
+  OCSPRequest,
+  GeneralName,
+  RelativeDistinguishedNames,
+  CertID,
+  Extension,
+  TBSRequest,
+  Request,
+} from 'pkijs';
 
 import getResultPrototype from './resultPrototype';
 import smimeSpecificationConstants from '../constants/smimeSpecificationConstants';
 import smimeVerificationResultCodes from '../constants/smimeVerificationResultCodes';
 
 class SmimeVerificationService {
+  constructor() {
+    this.ocspReqBuffer = new ArrayBuffer(0);
+  }
+
   /**
    * Verifies a passed rawMessage as a signed S/MIME message.
    * You should surround this with try/catch where it's called in case of unexpected exceptions that prohibit reaching
@@ -48,11 +63,56 @@ class SmimeVerificationService {
         const asn1 = this.getAsn1TypeFromBuffer(signatureBuffer);
 
         cmsSignedSimpl = this.getSignedDataFromAsn1(asn1);
+        const tbsThingy = new TBSRequest({tbs: cmsSignedSimpl.certificates[0].tbs});
+        let ocspReqSimpl = new OCSPRequest({tbsRequest: tbsThingy});
+        //region Put static variables
+        ocspReqSimpl.tbsRequest.requestorName = new GeneralName({
+          type: 4
+          ,
+          value: new RelativeDistinguishedNames({
+            typesAndValues: [
+              new AttributeTypeAndValue({
+                type: "2.5.4.6", // Country name
+                value: new asn1js.PrintableString({value: "DE"})
+              }),
+              new AttributeTypeAndValue({
+                type: "2.5.4.3", // Common name
+                value: new asn1js.BmpString({value: "Rocket Thingy"})
+              })
+            ]
+          })
+        });
+
+        ocspReqSimpl.tbsRequest.requestList = [new Request({
+          reqCert: new CertID({
+            hashAlgorithm: cmsSignedSimpl.digestAlgorithms[0],
+            issuerNameHash: new asn1js.OctetString({valueHex: cmsSignedSimpl.certificates[0].issuer.typesAndValues[3].value.valueBlock.valueHex}),
+            // issuerKeyHash: new asn1js.OctetString({valueHex: }),
+            serialNumber: new asn1js.Integer({valueHex: cmsSignedSimpl.certificates[0].serialNumber.valueBlock.valueHex})
+          })
+        })];
+
+        ocspReqSimpl.tbsRequest.requestExtensions = [
+          new Extension({
+            extnID: "1.3.6.1.5.5.7.48.1.2", // ocspNonce
+            extnValue: (new asn1js.OctetString({valueHex: this.nonceGenerator(32)})).toBER(false)
+          })
+        ];
+        //endregion
+
+        //region Encode OCSP request and put on the Web page
+        this.ocspReqBuffer = ocspReqSimpl.toSchema(true).toBER(false);
+        //endregion
+
+        const resultString = `${toBase64(arrayBufferToString(this.ocspReqBuffer))}`;
+        console.log('resultString');
+        console.log(resultString);
 
         // Get signer's email address from signature
         signerEmail = cmsSignedSimpl.certificates[0].subject.typesAndValues[0].value.valueBlock.value;
       }
       catch (ex) {
+        console.log(ex);
         result.success = false;
         result.code = smimeVerificationResultCodes.FRAUD_WARNING;
         result.message = 'Fraud warning: Invalid digital signature.';
@@ -97,6 +157,7 @@ class SmimeVerificationService {
       );
     });
   }
+
 
   isValidSmimeEmail(rootNode, signatureNode) {
     return rootNode.contentType &&
@@ -151,6 +212,15 @@ class SmimeVerificationService {
   isFromAddressCorrect(parser, signerEmail) {
     const fromNode = parser.node.headers.from[0].value[0];
     return fromNode.address === signerEmail;
+  }
+
+  nonceGenerator(length){
+    let text = "";
+    const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    for(let i = 0; i < length; i++) {
+      text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return stringToArrayBuffer(text);
   }
 }
 

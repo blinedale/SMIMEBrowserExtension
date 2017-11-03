@@ -1,7 +1,9 @@
 {
   "name": "rocket-smime-browser-extension",
-  "version": "0.0.1",
-  "description": "Verifies S/MIME emails in Gmail in your browser.",
+  "version": "1.0.0",
+  "name_text": "Rocket Internet S/MIME Signature Verifier",
+  "short_name_text": "S/MIME Signature Verifier",
+  "description": "Verifies S/MIME signed emails in Google Mail and Inbox. Made by Rocket Internet.",
   "scripts": {
     "test": "jest tests/*"
   },
@@ -17,6 +19,7 @@
   "homepage": "https://github.com/rocket-internet-berlin/RocketSMIMEBrowserExtension#readme",
   "dependencies": {
     "asn1js": "^2.0.15",
+    "babel-polyfill": "^6.26.0",
     "babel-loader": "^7.1.2",
     "babel-plugin-transform-runtime": "^6.23.0",
     "emailjs-mime-parser": "^1.0.0",
@@ -28,6 +31,7 @@
     "babel-cli": "^6.26.0",
     "babel-eslint": "^8.0.1",
     "babel-jest": "^21.2.0",
+    "babel-plugin-transform-regenerator": "^6.26.0",
     "babel-preset-env": "^1.6.0",
     "emailjs-mime-builder": "^1.0.1",
     "grunt": "^1.0.1",
@@ -63,6 +67,9 @@
     ]
   },
   "babel": {
+    "plugins": [
+      "transform-regenerator"
+    ],
     "presets": [
       [
         "env",
