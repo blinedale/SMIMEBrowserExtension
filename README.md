@@ -38,12 +38,14 @@ Verification results are stored in the local IndexedDB in the browser so we do n
 
 Note that we currently do not check if a certificate has been revoked during verification. This means that emails signed with revoked certificates will show up as valid if everything else checks out.
 
+We also currently have not tested what happens to expired certificates.
+
 ## Road map
 
 - Checking if a certificate is revoked during verification
+- Defining behaviour for expired certificates.
 - Working Firefox build (current Firefox version is broken due to incompatibility with InboxSDK)
 - Possibly releasing this project as open source
-- Upload to Chrome Web Store
 
 ## Credits
 
