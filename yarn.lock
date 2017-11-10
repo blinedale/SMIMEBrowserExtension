@@ -1564,15 +1564,6 @@ emailjs-addressparser@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/emailjs-addressparser/-/emailjs-addressparser-1.0.1.tgz#8b19b38f6ee67ba176a31a97f45678dc12e549cf"
 
-emailjs-mime-builder@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/emailjs-mime-builder/-/emailjs-mime-builder-1.0.1.tgz#9dcca5f8a09df095788975b1d57576fee6a83139"
-  dependencies:
-    emailjs-addressparser "^1.0.1"
-    emailjs-mime-codec "^1.0.1"
-    emailjs-mime-types "^1.0.0"
-    punycode "^1.4.0"
-
 emailjs-mime-codec@^1.0.1:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/emailjs-mime-codec/-/emailjs-mime-codec-1.0.4.tgz#49325e77c5fbdc88a7f65cc0c4ae2ebdeccf88b7"
@@ -1585,10 +1576,6 @@ emailjs-mime-parser@^1.0.0:
   dependencies:
     emailjs-addressparser "^1.0.1"
     emailjs-mime-codec "^1.0.1"
-
-emailjs-mime-types@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/emailjs-mime-types/-/emailjs-mime-types-1.0.0.tgz#885cd3fa8be04f25336106555561794fac0d8afe"
 
 emailjs-stringencoding@~1.0.1:
   version "1.0.1"
@@ -3221,10 +3208,10 @@ lru-cache@^4.0.1:
     yallist "^2.1.2"
 
 make-dir@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/make-dir/-/make-dir-1.0.0.tgz#97a011751e91dd87cfadef58832ebb04936de978"
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/make-dir/-/make-dir-1.1.0.tgz#19b4369fe48c116f53c2af95ad102c0e39e85d51"
   dependencies:
-    pify "^2.3.0"
+    pify "^3.0.0"
 
 makeerror@1.0.x:
   version "1.0.11"
@@ -3726,7 +3713,7 @@ performance-now@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/performance-now/-/performance-now-2.1.0.tgz#6309f4e0e5fa913ec1c69307ae364b4b377c9e7b"
 
-pify@^2.0.0, pify@^2.3.0:
+pify@^2.0.0:
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/pify/-/pify-2.3.0.tgz#ed141a6ac043a849ea588498e7dca8b15330e90c"
 
@@ -3846,7 +3833,7 @@ punycode@1.3.2:
   version "1.3.2"
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-1.3.2.tgz#9653a036fb7c1ee42342f2325cceefea3926c48d"
 
-punycode@^1.2.4, punycode@^1.4.0, punycode@^1.4.1:
+punycode@^1.2.4, punycode@^1.4.1:
   version "1.4.1"
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-1.4.1.tgz#c0d5a63b2718800ad8e1eb0fa5269c84dd41845e"
 

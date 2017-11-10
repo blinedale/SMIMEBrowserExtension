@@ -1,5 +1,5 @@
 import MimeParser from 'emailjs-mime-parser';
-import {stringToArrayBuffer, toBase64, arrayBufferToString, utilConcatBuf} from 'pvutils';
+import {stringToArrayBuffer, arrayBufferToString, utilConcatBuf} from 'pvutils';
 import * as asn1js from 'asn1js';
 import {
   AttributeTypeAndValue,
@@ -17,6 +17,10 @@ import {
 import getResultPrototype from './resultPrototype';
 import smimeSpecificationConstants from '../constants/smimeSpecificationConstants';
 import smimeVerificationResultCodes from '../constants/smimeVerificationResultCodes';
+
+import * as Base64lib from 'js-base64';
+
+const base64 = Base64lib.Base64;
 
 class SmimeVerificationService {
   constructor() {
@@ -64,7 +68,7 @@ class SmimeVerificationService {
 
         cmsSignedSimpl = this.getSignedDataFromAsn1(asn1);
         const tbsThingy = new TBSRequest({tbs: cmsSignedSimpl.certificates[0].tbs});
-        let ocspReqSimpl = new OCSPRequest({tbsRequest: tbsThingy});
+        const ocspReqSimpl = new OCSPRequest({tbsRequest: tbsThingy});
         //region Put static variables
         ocspReqSimpl.tbsRequest.requestorName = new GeneralName({
           type: 4
@@ -104,7 +108,7 @@ class SmimeVerificationService {
         this.ocspReqBuffer = ocspReqSimpl.toSchema(true).toBER(false);
         //endregion
 
-        const resultString = `${toBase64(arrayBufferToString(this.ocspReqBuffer))}`;
+        const resultString = `${base64.encode(arrayBufferToString(this.ocspReqBuffer))}`;
         console.log('resultString');
         console.log(resultString);
 

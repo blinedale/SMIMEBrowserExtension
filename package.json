@@ -19,6 +19,7 @@
   "homepage": "https://github.com/rocket-internet-berlin/RocketSMIMEBrowserExtension#readme",
   "dependencies": {
     "asn1js": "^2.0.15",
+    "babel-core": "^6.0.0",
     "babel-polyfill": "^6.26.0",
     "babel-loader": "^7.1.2",
     "babel-plugin-transform-runtime": "^6.23.0",
