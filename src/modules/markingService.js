@@ -60,11 +60,8 @@ class MarkingService {
   }
 
   isInbox() {
-    const result = /^https:\/\/inbox\.google\.com\/([a-z0-9/?=&]+)?$/.exec(window.location.href);
-    if (result != null && result.length) {
-      return true;
-    }
-    return false;
+    const result = /^https:\/\/inbox\.google\.com\/.+$/.exec(window.location.href);
+    return result && result.length;
   }
 
   addInfoText(markedClassName, infoText) {
