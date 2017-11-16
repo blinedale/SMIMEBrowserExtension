@@ -1,5 +1,6 @@
 module.exports = function(grunt) {
   const webpackConfig = require('./webpack.config');
+  const webpackBackgroundConfig = require('./webpack.background.config');
   const pkg = grunt.file.readJSON('package.json');
 
   const zipPath = 'dist/';
@@ -211,7 +212,8 @@ module.exports = function(grunt) {
         stats: !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
       },
       build: webpackConfig,
-      watch: Object.assign({watch: true}, webpackConfig)
+      watch: Object.assign({watch: true}, webpackConfig),
+      build_background: webpackBackgroundConfig,
     }
 
   });
@@ -233,6 +235,7 @@ module.exports = function(grunt) {
       'copy:common',
       'replace:about_popup',
       'webpack:build',
+      'webpack:build_background'
     ]
   );
 
