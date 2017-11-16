@@ -36,8 +36,6 @@ class SmimeVerificationService {
         return resolve(result);
       }
 
-      // Done with specification checks. Let's actually verify the message.
-
       let cmsSignedSimpl = null;
       let signerEmail = '';
 

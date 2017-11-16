@@ -1,12 +1,9 @@
-import * as Base64lib from 'js-base64';
-
-const base64 = Base64lib.Base64;
-
 class DbHandler {
-  constructor(dbConfig, loggerService) {
+  constructor(dbConfig, loggerService, base64lib) {
     this.db = null;
     this.dbConfig = dbConfig;
     this.loggerService = loggerService;
+    this.base64lib = base64lib;
 
     this.getDb().then(db => { this.db = db; });
 
@@ -89,7 +86,7 @@ class DbHandler {
         this.loggerService.log(request.result);
 
         if (request.result) {
-          request.result.signer = base64.decode(request.result.signer);
+          request.result.signer = this.base64lib.decode(request.result.signer);
         }
 
         return resolve(request.result);
@@ -111,7 +108,7 @@ class DbHandler {
 
       // To "censor" the signer's email. Cloning to not cause issues with concurrently running code using the same object.
       const resultObjectClone = Object.assign({}, resultObject);
-      resultObjectClone.signer =  base64.encode(resultObjectClone.signer);
+      resultObjectClone.signer =  this.base64lib.encode(resultObjectClone.signer);
 
       const transaction = this.db.transaction([this.dbConfig.stores.results], "readwrite");
       const resultStore = transaction.objectStore(this.dbConfig.stores.results);

@@ -24,6 +24,9 @@
       "js": ["lib/inboxsdk.js", "content-scripts/cs-bundle.js"]
     }
   ],
+  "background": {
+    "scripts": ["background-scripts/background-bundle.js"]
+  },
   "browser_action": {
     "default_title": "S/MIME Signature Verification for Gmail",
     "default_icon": "img/extension-16.png",
