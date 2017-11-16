@@ -1,8 +1,8 @@
 class SmimeMessageHandler {
-  constructor(dbHandler, markingService, smimeVerificationService, loggerService, gmailSourceService) {
+  constructor(dbHandler, markingService, loggerService, gmailSourceService) {
     this.dbHandler = dbHandler;
     this.markingService = markingService;
-    this.smimeVerificationService = smimeVerificationService;
+//    this.smimeVerificationService = smimeVerificationService;
     this.loggerService = loggerService;
     this.gmailSourceService = gmailSourceService;
   }
@@ -24,7 +24,8 @@ class SmimeMessageHandler {
 
   verifyAndMark(rawMessage, mailId, domMessage) {
     try {
-      this.smimeVerificationService.verifyMessageSignature(rawMessage, mailId).then(result => {
+      //send to background and process response
+      chrome.runtime.sendMessage({method: 'verifyMessageSignature', rawMessage, mailId}, result => {
         this.loggerService.log(`Reached conclusive result in S/MIME verification of mail id ${mailId}. Will attempt to save it.`);
         this.loggerService.log(result);
 
@@ -32,6 +33,17 @@ class SmimeMessageHandler {
 
         this.markingService.markResult(domMessage, result);
       });
+
+
+      /*
+      this.smimeVerificationService.verifyMessageSignature(rawMessage, mailId).then(result => {
+        this.loggerService.log(`Reached conclusive result in S/MIME verification of mail id ${mailId}. Will attempt to save it.`);
+        this.loggerService.log(result);
+
+        this.dbHandler.saveResult(result); // Can run this async, does not affect marking.
+
+        this.markingService.markResult(domMessage, result);
+      }); */
     }
     catch (ex) {
       this.loggerService.err(`S/MIME verification failed due to uncaught exception for mail id ${mailId}. Will not save result.`);

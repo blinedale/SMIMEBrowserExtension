@@ -59,6 +59,9 @@ class SmimeVerificationService {
         return resolve(result);
       }
 
+      console.log('logging cmsSignedSimpl');
+      console.log(cmsSignedSimpl);
+
       // Get content of email that was signed. Should be entire first child node.
       const signedDataBuffer = stringToArrayBuffer(parser.nodes.node1.raw.replace(/\n/g, "\r\n"));
 
