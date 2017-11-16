@@ -1,6 +1,7 @@
 import MimeParser from 'emailjs-mime-parser';
 import {stringToArrayBuffer, utilConcatBuf} from 'pvutils';
 import * as asn1js from 'asn1js';
+// import { SignedData, ContentInfo, OCSPRequest } from 'pkijs';
 import {SignedData, ContentInfo} from 'pkijs';
 
 import getResultPrototype from './resultPrototype';
@@ -8,6 +9,10 @@ import smimeSpecificationConstants from '../constants/smimeSpecificationConstant
 import smimeVerificationResultCodes from '../constants/smimeVerificationResultCodes';
 
 class SmimeVerificationService {
+  constructor(trustedRootCerts) {
+    this.trustedRootCerts = trustedRootCerts;
+  }
+
   /**
    * Verifies a passed rawMessage as a signed S/MIME message.
    * You should surround this with try/catch where it's called in case of unexpected exceptions that prohibit reaching
@@ -37,6 +42,7 @@ class SmimeVerificationService {
 
       let cmsSignedSimpl = null;
       let signerEmail = '';
+      let signerIndex = null;
 
       try {
         // Get signature buffer
@@ -46,7 +52,7 @@ class SmimeVerificationService {
 
         cmsSignedSimpl = this.getSignedDataFromAsn1(asn1);
 
-        signerEmail = this.fetchSignerEmail(cmsSignedSimpl);
+        ({signerEmail, signerIndex} = this.fetchSignerEmail(cmsSignedSimpl));
       }
       catch (ex) {
         result.code = smimeVerificationResultCodes.FRAUD_WARNING;
@@ -63,36 +69,79 @@ class SmimeVerificationService {
         return resolve(result);
       }
 
+      console.log('logging cmsSignedSimpl');
+      console.log(cmsSignedSimpl);
+      console.log(signerEmail);
+      console.log(signerIndex);
+
       // Get content of email that was signed. Should be entire first child node.
       const signedDataBuffer = stringToArrayBuffer(parser.nodes.node1.raw.replace(/\n/g, "\r\n"));
 
+      /*
+      console.log('generating ocsp thing');
+      const ocspreq = new OCSPRequest();
+      ocspreq.createForCertificate(cmsSignedSimpl.certificates[0], {hashAlgorithm: 'SHA-256', issuerCertificate: cmsSignedSimpl.certificates[1]})
+        .then(() => {
+        console.log('we now have ocsprequest');
+        console.log(ocspreq);
+
+        const ocspSchema = ocspreq.toSchema(false);
+
+        console.log('ocspSchema');
+        console.log(ocspSchema);
+
+        const ocspreqBuffer = ocspSchema.toBER(false);
+
+        const ocspreqAsBitArray = new Uint8Array(ocspreqBuffer);
+
+        // ocspreq in base64:
+        const ocspDataString = String.fromCharCode.apply(null, ocspreqAsBitArray);
+        const base64String = window.btoa(ocspDataString);
+        console.log('ocsp req in base64:');
+        console.log(base64String);
+
+      });
+      */
+
+      const verificationOptions = {
+        signer: 0, // index to use in array in cmsSignedSimpl.signerInfos - this is always 0
+        data: signedDataBuffer,
+        checkChain: true,
+        extendedMode: true,
+        trustedCerts: this.trustedRootCerts
+      };
+
       // Verify the signed data
-      cmsSignedSimpl.verify({signer: 0, data: signedDataBuffer}).then(
-        verificationResult => {
-          result.signer = signerEmail;
+      cmsSignedSimpl.verify(verificationOptions).then(verificationResult => {
+        result.signer = signerEmail;
 
-          if (this.isVerificationFailed(verificationResult)) {
-            result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-            result.message = `Signature verification failed. Message content may be fraudulent.`;
-            return resolve(result);
-          }
-
-          if (!this.isFromAddressCorrect(parser, signerEmail)) {
-            result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-            result.message = `The "From" email address does not match the signature's email address.`;
-            return resolve(result);
-          }
-
-          result.code = smimeVerificationResultCodes.VERIFICATION_OK;
-          result.message = `Message signature is valid for the sender.`;
-          return resolve(result);
-        }).catch(
-        // eslint-disable-next-line no-unused-vars
-        error => {
-          result.code = smimeVerificationResultCodes.CANNOT_VERIFY;
-          result.message = `Message cannot be verified. Unknown error.`;
+        if (this.isVerificationFailed(verificationResult)) {
+          result.code = smimeVerificationResultCodes.FRAUD_WARNING;
+          result.message = `Signature verification failed. Message content may be fraudulent.`;
           return resolve(result);
         }
+
+        if (!this.isFromAddressCorrect(parser, signerEmail)) {
+          result.code = smimeVerificationResultCodes.FRAUD_WARNING;
+          result.message = `The "From" email address does not match the signature's email address.`;
+          return resolve(result);
+        }
+
+        result.code = smimeVerificationResultCodes.VERIFICATION_OK;
+        result.message = `Message signature is valid for the sender.`;
+        return resolve(result);
+      }).catch(error => {
+        if (error.message.indexOf('No valid certificate paths found') !== -1) {
+          // This happens when we could not find the corresponding root CA in this.trustedRootCerts
+          result.code = smimeVerificationResultCodes.FRAUD_WARNING;
+          result.message = `Could not verify the signature's certificate origin.`;
+          return resolve(result);
+        }
+
+        result.code = smimeVerificationResultCodes.CANNOT_VERIFY;
+        result.message = `Message cannot be verified. Unknown error.`;
+        return resolve(result);
+      }
       );
     });
   }
@@ -100,19 +149,21 @@ class SmimeVerificationService {
   /**
    * Get signer's email address from signature
    * @param {SignedData} signedData
-   * @returns {String}
+   * @returns {object}
    */
   fetchSignerEmail(signedData) {
     let signerEmail = null;
+    let signerIndex = null;
     Object.keys(signedData.certificates).forEach(certKey => {
       Object.keys(signedData.certificates[certKey].subject.typesAndValues).forEach(subjectKey => {
         const type = signedData.certificates[certKey].subject.typesAndValues[subjectKey].type;
         if (type == smimeSpecificationConstants.certificateTypeForSignerEmail) {
           signerEmail = signedData.certificates[certKey].subject.typesAndValues[subjectKey].value.valueBlock.value;
+          signerIndex = certKey;
         }
       });
     });
-    return signerEmail;
+    return {signerEmail, signerIndex};
   }
 
   /**

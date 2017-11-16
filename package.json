@@ -19,6 +19,7 @@
   "homepage": "https://github.com/rocket-internet-berlin/RocketSMIMEBrowserExtension#readme",
   "dependencies": {
     "asn1js": "^2.0.15",
+    "babel-polyfill": "^6.26.0",
     "emailjs-mime-parser": "^1.0.0",
     "js-base64": "^2.3.2",
     "pkijs": "^2.1.6",
