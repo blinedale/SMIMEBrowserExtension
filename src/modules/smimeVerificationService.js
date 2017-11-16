@@ -66,7 +66,7 @@ class SmimeVerificationService {
       const signedDataBuffer = stringToArrayBuffer(parser.nodes.node1.raw.replace(/\n/g, "\r\n"));
 
       // Verify the signed data
-      cmsSignedSimpl.verify({signer: 0, data: signedDataBuffer}).then(
+      cmsSignedSimpl.verify({signer: 0, data: signedDataBuffer, checkChain: true, extendedMode: true}).then(
         verificationResult => {
           result.signer = signerEmail;
 
@@ -94,6 +94,7 @@ class SmimeVerificationService {
           result.success = false;
           result.code = smimeVerificationResultCodes.CANNOT_VERIFY;
           result.message = 'Message cannot be verified: Unknown error.';
+          console.log(error);
           return resolve(result);
         }
       );
