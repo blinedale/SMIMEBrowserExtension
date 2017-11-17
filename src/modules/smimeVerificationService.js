@@ -1,7 +1,7 @@
 import MimeParser from 'emailjs-mime-parser';
 import {stringToArrayBuffer, utilConcatBuf} from 'pvutils';
 import * as asn1js from 'asn1js';
-import {SignedData, ContentInfo} from 'pkijs';
+import { SignedData, ContentInfo, OCSPRequest } from 'pkijs';
 
 import getResultPrototype from './resultPrototype';
 import smimeSpecificationConstants from '../constants/smimeSpecificationConstants';
@@ -62,11 +62,19 @@ class SmimeVerificationService {
       console.log('logging cmsSignedSimpl');
       console.log(cmsSignedSimpl);
 
+      console.log('generating ocsp thing');
+      const ocspreq = new OCSPRequest();
+      ocspreq.createForCertificate(cmsSignedSimpl.certificates[0], {hashAlgorithm: 'SHA-256', issuerCertificate: cmsSignedSimpl.certificates[1]})
+        .then(() => {console.log('stuff2222'); console.log(ocspreq); });
+
       // Get content of email that was signed. Should be entire first child node.
       const signedDataBuffer = stringToArrayBuffer(parser.nodes.node1.raw.replace(/\n/g, "\r\n"));
 
+      console.log('checking that we have root cert');
+      console.log(this.rootCert);
+
       // Verify the signed data
-      cmsSignedSimpl.verify({signer: 0, data: signedDataBuffer, checkChain: true, extendedMode: true}).then(
+      cmsSignedSimpl.verify({signer: 0, data: signedDataBuffer, checkChain: true, extendedMode: true, trustedCerts: [this.rootCert]}).then(
         verificationResult => {
           result.signer = signerEmail;
 
@@ -154,6 +162,10 @@ class SmimeVerificationService {
   isFromAddressCorrect(parser, signerEmail) {
     const fromNode = parser.node.headers.from[0].value[0];
     return fromNode.address === signerEmail;
+  }
+
+  setRootCert(cert) {
+    this.rootCert = cert;
   }
 }
 
