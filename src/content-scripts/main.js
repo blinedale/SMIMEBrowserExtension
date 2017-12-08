@@ -1,12 +1,8 @@
-import * as Base64lib from 'js-base64';
-
-import {smimeMessageHandler, configService, loggerService} from '../modules';
-
-const base64 = Base64lib.Base64;
+import {base64lib, smimeMessageHandler, configService, loggerService} from '../modules/content-scripts';
 
 const inboxSDKConfig = configService.get('inboxSDK');
 const inboxSDKApiVersion = inboxSDKConfig.API_VERSION;
-const inboxSDKApiKey = base64.decode(inboxSDKConfig.API_KEY);
+const inboxSDKApiKey = base64lib.decode(inboxSDKConfig.API_KEY);
 
 // eslint-disable-next-line no-undef
 InboxSDK.load(inboxSDKApiVersion, inboxSDKApiKey)
@@ -19,6 +15,6 @@ InboxSDK.load(inboxSDKApiVersion, inboxSDKApiKey)
 })
 .catch(error => {
   // This currently happens for Firefox as InboxSDK uses some WebKit specific code.
-  loggerService.err('Could not load InboxSDK. ');
+  loggerService.err('Could not load InboxSDK.');
   loggerService.err(error);
 });

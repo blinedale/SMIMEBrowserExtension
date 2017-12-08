@@ -1,8 +1,9 @@
+import messagingMethods from '../constants/messagingMethods';
+
 class SmimeMessageHandler {
-  constructor(dbHandler, markingService, smimeVerificationService, loggerService, gmailSourceService) {
+  constructor(dbHandler, markingService, loggerService, gmailSourceService) {
     this.dbHandler = dbHandler;
     this.markingService = markingService;
-    this.smimeVerificationService = smimeVerificationService;
     this.loggerService = loggerService;
     this.gmailSourceService = gmailSourceService;
   }
@@ -24,7 +25,8 @@ class SmimeMessageHandler {
 
   verifyAndMark(rawMessage, mailId, domMessage) {
     try {
-      this.smimeVerificationService.verifyMessageSignature(rawMessage, mailId).then(result => {
+      //send to background and process response
+      chrome.runtime.sendMessage({method: messagingMethods.verifyMessageSignature, rawMessage, mailId}, result => {
         this.loggerService.log(`Reached conclusive result in S/MIME verification of mail id ${mailId}. Will attempt to save it.`);
         this.loggerService.log(result);
 
