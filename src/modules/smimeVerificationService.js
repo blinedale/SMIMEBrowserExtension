@@ -65,9 +65,6 @@ class SmimeVerificationService {
       // Get content of email that was signed. Should be entire first child node.
       const signedDataBuffer = stringToArrayBuffer(parser.nodes.node1.raw.replace(/\n/g, "\r\n"));
 
-
-
-
       console.log('generating ocsp thing');
       const ocspreq = new OCSPRequest();
       ocspreq.createForCertificate(cmsSignedSimpl.certificates[0], {hashAlgorithm: 'SHA-256', issuerCertificate: cmsSignedSimpl.certificates[1]})
@@ -91,8 +88,6 @@ class SmimeVerificationService {
         console.log(base64String);
 
       });
-
-
 
       // Verify the signed data
       cmsSignedSimpl.verify({signer: 0, data: signedDataBuffer, checkChain: true, extendedMode: true, trustedCerts: [this.rootCert]}).then(
