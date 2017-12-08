@@ -47,8 +47,7 @@ class SmimeVerificationService {
 
         cmsSignedSimpl = this.getSignedDataFromAsn1(asn1);
 
-        // Get signer's email address from signature
-        signerEmail = cmsSignedSimpl.certificates[0].subject.typesAndValues[0].value.valueBlock.value;
+        signerEmail = this.fetchSignerEmail(cmsSignedSimpl);
       }
       catch (ex) {
         result.success = false;
@@ -93,6 +92,24 @@ class SmimeVerificationService {
         }
       );
     });
+  }
+
+  /**
+   * Get signer's email address from signature
+   * @param signedData
+   * @returns string
+   */
+  fetchSignerEmail(signedData) {
+    let signerEmail = null;
+    Object.keys(signedData.certificates).forEach(certKey => {
+      Object.keys(signedData.certificates[certKey].subject.typesAndValues).forEach(subjectKey => {
+        const type = signedData.certificates[certKey].subject.typesAndValues[subjectKey].type;
+        if (type == smimeSpecificationConstants.certificateTypeForSignerEmail) {
+          signerEmail = signedData.certificates[certKey].subject.typesAndValues[subjectKey].value.valueBlock.value;
+        }
+      });
+    });
+    return signerEmail;
   }
 
   isValidSmimeEmail(rootNode, signatureNode) {
