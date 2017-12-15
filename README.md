@@ -25,11 +25,12 @@ As a user, you don't need to do anything - everything happens behind the scenes.
 
 1. ...is a valid S/MIME message
 2. ...has a valid signature
-3. ...the signature matches the message content
-4. ...the 'From' address matches the signer's email in the certificate
+3. ...no included certificates are expired/ not valid yet
+4. ...the signature matches the message content
+5. ...the 'From' address matches the signer's email in the certificate
 
 - An email failing step 1 will not be processed further and will not be marked in the UI in any way.
-- Passing step 1 but failing step 2, 3, or 4 will result in the email being marked with an angry red x plus a message stating 'Fraud warning!'.
+- Passing step 1 but failing step 2, 3, 4, or 5 will result in the email being marked with an angry red x plus a message stating 'Fraud warning!'.
 - Passing all the steps will result in the email being marked with a green check mark plus the email address contained in the cryptographic signature.
 
 Marking is done in the upper right of each email. Note that any email in a thread has to be opened completely to trigger a verification; we do not verify emails that are collapsed or hidden in previous thread history.
@@ -38,12 +39,9 @@ Verification results are stored in the local IndexedDB in the browser so we do n
 
 Note that we currently do not check if a certificate has been revoked during verification. This means that emails signed with revoked certificates will show up as valid if everything else checks out.
 
-We also currently have not tested what happens to expired certificates.
-
 ## Road map
 
 - Checking if a certificate is revoked during verification
-- Defining behaviour for expired certificates.
 - Working Firefox build (current Firefox version is broken due to incompatibility with InboxSDK)
 - Possibly releasing this project as open source
 

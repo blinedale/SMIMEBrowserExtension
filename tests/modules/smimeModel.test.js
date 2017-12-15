@@ -5,7 +5,12 @@ import MimeBuilder from 'emailjs-mime-builder';
 
 import smimeVerificationResultCodes from '../../src/constants/smimeVerificationResultCodes';
 import SmimeVerificationService from '../../src/modules/smimeVerificationService';
-import {emailWithAsn1CompliantButInvalidSignature, emailWithValidSignatureAndIncorrectFromAddress, emailWithValidSignatureAndManipulatedMessage} from "../helpers/smimeEmails";
+import {
+  emailWithAsn1CompliantButInvalidSignature,
+  emailWithValidSignatureAndIncorrectFromAddress,
+  emailWithValidSignatureAndManipulatedMessage,
+  emailWithValidSignatureAndExpiredCertificate
+} from "../helpers/smimeEmails";
 
 describe('SmimeVerificationService', () => {
   const smimeVerificationService = new SmimeVerificationService();
@@ -244,8 +249,24 @@ describe('SmimeVerificationService', () => {
   });
 
   describe('ways to get fraud warning from valid signature', () => {
+    it('has a valid signature but one of the included certificates has expired', () =>
+      smimeVerificationService.verifyMessageSignature(emailWithValidSignatureAndExpiredCertificate).then(
+        result => {
+          expect(result.code).toBe(smimeVerificationResultCodes.FRAUD_WARNING);
+          expect(isValidSmimeEmailSpy.calledOnce).toBe(true);
+          expect(isRootNodeContentTypeValueCorrectSpy.calledOnce).toBe(true);
+          expect(isRootNodeContentTypeProtocolCorrectSpy.calledOnce).toBe(true);
+          expect(isRootNodeContentTypeMicalgCorrectSpy.calledOnce).toBe(true);
+          expect(isSignatureNodeContentTypeValueCorrectSpy.calledOnce).toBe(true);
+          expect(getAsn1TypeFromBufferSpy.calledOnce).toBe(true);
+          expect(getSignedDataFromAsn1Spy.calledOnce).toBe(true);
+          expect(isVerificationFailedSpy.notCalled).toBe(true);
+          expect(isFromAddressCorrectSpy.notCalled).toBe(true);
+        }
+      )
+    );
+
     // TODO: Test for revoked certificate
-    // TODO: Test for expired certificate
 
     // FIXME: Verification fails since PKI.js cannot instantiate a WebCrypto instance
     /*
