@@ -1,5 +1,5 @@
 import messagingMethods from '../constants/messagingMethods';
-import {smimeVerificationService} from '../modules/background';
+import {smimeVerificationService, dbHandler} from '../modules/background';
 
 chrome.runtime.onMessage.addListener(
   (request, sender, sendResponse) => {
@@ -7,6 +7,18 @@ chrome.runtime.onMessage.addListener(
       smimeVerificationService.verifyMessageSignature(request.rawMessage, request.mailId).then(result => sendResponse(result));
 
       return true; // Will make sure sendResponse is called async
+    }
+
+    if (request.method === messagingMethods.getSavedResult) {
+      dbHandler.getSavedResult(request.messageId).then(result => sendResponse(result));
+
+      return true;
+    }
+
+    if (request.method === messagingMethods.saveResult) {
+      dbHandler.saveResult(request.result).then(result => sendResponse(result));
+
+      return true;
     }
 
     console.log('unknown message');
