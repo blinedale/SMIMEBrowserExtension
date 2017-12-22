@@ -80,7 +80,7 @@ class MarkingService {
     // CANNOT_VERIFY does not trigger marking and does not need its own info text.
     switch (result.code) {
       case smimeVerificationResultCodes.FRAUD_WARNING:
-        return 'Fraud warning!';
+        return 'Caution!';
       case smimeVerificationResultCodes.VERIFICATION_OK:
         return result.signer;
       default:
