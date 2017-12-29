@@ -60,7 +60,6 @@ class SmimeVerificationService {
          Ergo, if it's expired, it's impossible to know if the cert is revoked or not.
          No point in continuing further. */
       if (this.isAnyCertificateExpired(cmsSignedSimpl)) {
-        result.success = false;
         result.code = smimeVerificationResultCodes.FRAUD_WARNING;
         result.message = `The signature's certificate has expired. Be wary of message content.`;
         return resolve(result);
