@@ -32,7 +32,7 @@ class SmimeVerificationService {
       if (!this.isValidSmimeEmail(parser.node, signatureNode)) {
         result.success = false;
         result.code = smimeVerificationResultCodes.CANNOT_VERIFY;
-        result.message = 'Message is not digitally signed.';
+        result.message = `Message is not digitally signed.`;
         return resolve(result);
       }
 
@@ -52,7 +52,7 @@ class SmimeVerificationService {
       catch (ex) {
         result.success = false;
         result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-        result.message = 'Fraud warning: Invalid digital signature.';
+        result.message = `Invalid digital signature.`;
         return resolve(result);
       }
 
@@ -67,27 +67,27 @@ class SmimeVerificationService {
           if (this.isVerificationFailed(verificationResult)) {
             result.success = false;
             result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-            result.message = "Fraud warning: Message failed verification with signature.";
+            result.message = `Signature verification failed. Message content may be fraudulent.`;
             return resolve(result);
           }
 
           if (!this.isFromAddressCorrect(parser, signerEmail)) {
             result.success = false;
             result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-            result.message = 'Fraud warning: The "From" email address does not match the signature\'s email address.';
+            result.message = `The "From" email address does not match the signature's email address.`;
             return resolve(result);
           }
 
           result.success = true;
           result.code = smimeVerificationResultCodes.VERIFICATION_OK;
-          result.message = `Message includes a valid digital signature for the sender.`;
+          result.message = `Message signature is valid for the sender.`;
           return resolve(result);
         }).catch(
         // eslint-disable-next-line no-unused-vars
         error => {
           result.success = false;
           result.code = smimeVerificationResultCodes.CANNOT_VERIFY;
-          result.message = 'Message cannot be verified: Unknown error.';
+          result.message = `Message cannot be verified. Unknown error.`;
           return resolve(result);
         }
       );
