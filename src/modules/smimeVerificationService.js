@@ -30,7 +30,6 @@ class SmimeVerificationService {
       const signatureNode = parser.getNode("2");
 
       if (!this.isValidSmimeEmail(parser.node, signatureNode)) {
-        result.success = false;
         result.code = smimeVerificationResultCodes.CANNOT_VERIFY;
         result.message = `Message is not digitally signed.`;
         return resolve(result);
@@ -50,7 +49,6 @@ class SmimeVerificationService {
         signerEmail = this.fetchSignerEmail(cmsSignedSimpl);
       }
       catch (ex) {
-        result.success = false;
         result.code = smimeVerificationResultCodes.FRAUD_WARNING;
         result.message = `Invalid digital signature.`;
         return resolve(result);
@@ -65,27 +63,23 @@ class SmimeVerificationService {
           result.signer = signerEmail;
 
           if (this.isVerificationFailed(verificationResult)) {
-            result.success = false;
             result.code = smimeVerificationResultCodes.FRAUD_WARNING;
             result.message = `Signature verification failed. Message content may be fraudulent.`;
             return resolve(result);
           }
 
           if (!this.isFromAddressCorrect(parser, signerEmail)) {
-            result.success = false;
             result.code = smimeVerificationResultCodes.FRAUD_WARNING;
             result.message = `The "From" email address does not match the signature's email address.`;
             return resolve(result);
           }
 
-          result.success = true;
           result.code = smimeVerificationResultCodes.VERIFICATION_OK;
           result.message = `Message signature is valid for the sender.`;
           return resolve(result);
         }).catch(
         // eslint-disable-next-line no-unused-vars
         error => {
-          result.success = false;
           result.code = smimeVerificationResultCodes.CANNOT_VERIFY;
           result.message = `Message cannot be verified. Unknown error.`;
           return resolve(result);
