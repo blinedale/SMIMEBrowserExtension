@@ -14,7 +14,7 @@ class SmimeVerificationService {
    * a conclusive result - in this case we should not persist the result.
    * The returned result object's message is meant to be displayed to the user and should not be too technical.
    * @param rawMessage Full MIME message. Preferably in binary form as this reduces the risk of encoding issues.
-   * @param mailId String of mail id.
+   * @param {String} mailId String of mail id.
    * @returns {Promise}
    */
   verifyMessageSignature(rawMessage, mailId) {
@@ -54,6 +54,15 @@ class SmimeVerificationService {
         return resolve(result);
       }
 
+      /* We have to check for expiration here since we cannot do OCSP on expired certs.
+         Ergo, if it's expired, it's impossible to know if the cert is revoked or not.
+         No point in continuing further. */
+      if (this.isAnyCertificateExpired(cmsSignedSimpl)) {
+        result.code = smimeVerificationResultCodes.FRAUD_WARNING;
+        result.message = `The signature's certificate has expired. Be wary of message content.`;
+        return resolve(result);
+      }
+
       // Get content of email that was signed. Should be entire first child node.
       const signedDataBuffer = stringToArrayBuffer(parser.nodes.node1.raw.replace(/\n/g, "\r\n"));
 
@@ -90,8 +99,8 @@ class SmimeVerificationService {
 
   /**
    * Get signer's email address from signature
-   * @param signedData
-   * @returns string
+   * @param {SignedData} signedData
+   * @returns {String}
    */
   fetchSignerEmail(signedData) {
     let signerEmail = null;
@@ -104,6 +113,32 @@ class SmimeVerificationService {
       });
     });
     return signerEmail;
+  }
+
+  /**
+   * Checks if any of the included certificates expired/not valid yet.
+   * @param {SignedData} signedData
+   * @returns {Boolean}
+   */
+  isAnyCertificateExpired(signedData) {
+    const marginMilliseconds = smimeSpecificationConstants.expirationDateMarginHours * 60 * 60 * 1000;
+    const now = new Date();
+    let startDateWithMargin;
+    let endDateWithMargin;
+
+    for (const certificate of signedData.certificates) {
+      startDateWithMargin = new Date(certificate.notBefore.value.getTime() - marginMilliseconds);
+      if (now < startDateWithMargin) {
+        return true;
+      }
+
+      endDateWithMargin = new Date(certificate.notAfter.value.getTime() + marginMilliseconds);
+      if (now > endDateWithMargin) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   isValidSmimeEmail(rootNode, signatureNode) {
