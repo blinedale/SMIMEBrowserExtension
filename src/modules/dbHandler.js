@@ -90,9 +90,8 @@ class DbHandler {
             return resolve(null);
           }
 
-          const currentDate = new Date();
-          if (currentDate.getTime() >= request.result.ttl) {
-            this.loggerService.err(`Got result for mail id ${mailId} but it's TTL has expired.`);
+          if (this.isExpired(request.result.ttl)) {
+            this.loggerService.err(`Got result for mail id ${mailId} but its TTL has expired.`);
             return resolve(null);
           }
 
@@ -102,6 +101,26 @@ class DbHandler {
         return resolve(request.result);
       };
     });
+  }
+
+  /**
+   *
+   * @param expirationTime
+   * @returns {boolean}
+   */
+  isExpired(expirationTime) {
+    const currentDate = new Date();
+
+    return currentDate.getTime() < expirationTime;
+  }
+
+  /**
+   * Calculates response expiration time
+   */
+  calculateExpirationTime() {
+    return {
+      expirationTime: (new Date((new Date()).getTime() + this.dbConfig.records_expiration_minutes * 60000))
+    };
   }
 
   saveResult(resultObject) {
@@ -116,12 +135,8 @@ class DbHandler {
         return resolve(null);
       }
 
-      // add TTL to result object
-      const currentDate = new Date();
-      resultObject.ttl = currentDate.setDate(currentDate.getTime() + this.dbConfig.records_expiration_minutes * 60000);
-
       // To "censor" the signer's email. Cloning to not cause issues with concurrently running code using the same object.
-      const resultObjectClone = Object.assign({}, resultObject);
+      const resultObjectClone = Object.assign({}, resultObject, this.calculateExpirationTime());
       resultObjectClone.signer =  this.base64lib.encode(resultObjectClone.signer);
 
       const transaction = this.db.transaction([this.dbConfig.stores.results], "readwrite");

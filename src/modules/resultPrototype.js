@@ -4,7 +4,7 @@ function getResultPrototype() {
     code: '',
     message: '',
     signer: '',
-    ttl: null,
+    expirationTime: null,
   };
 }
 
