@@ -1,6 +1,10 @@
 import smimeVerificationResultCodes from '../constants/smimeVerificationResultCodes';
 
 class MarkingService {
+  constructor(tooltipService) {
+    this.tooltip = tooltipService;
+  }
+
   markResult(domMessage, result) {
     if (result.code === smimeVerificationResultCodes.CANNOT_VERIFY) {
       // No marking for CANNOT_VERIFY
@@ -15,6 +19,7 @@ class MarkingService {
     } else { // gmail mode activated
       this.markForGmail(domMessage, result, iconUrl, infoText);
     }
+    this.tooltip.addTooltip(result.message);
   }
 
   markForInbox(domMessage, result, iconUrl, infoText) {
@@ -39,16 +44,16 @@ class MarkingService {
 
   markForGmail(domMessage, result, iconUrl, infoText) {
     const markedClassName = `smime-mark-${result.mailId}`;
+    const iconClass = `${markedClassName} tooltip`;
 
     const messageAttachmentIconDescriptor = {
       iconUrl,
-      iconClass: markedClassName,
-      tooltip: result.message
+      iconClass
     };
 
     domMessage.addAttachmentIcon(messageAttachmentIconDescriptor);
 
-    this.addInfoText(markedClassName, infoText);
+    this.addInfoText(markedClassName, infoText, result.message);
   }
 
   createCustomIcon(iconUrl, message) {
@@ -64,14 +69,15 @@ class MarkingService {
     return result && result.length;
   }
 
-  addInfoText(markedClassName, infoText) {
+  addInfoText(markedClassName, infoText, message) {
     const el = document.createElement('span');
     const container = document.getElementsByClassName(markedClassName);
 
     if (container.length > 0) {
       const index = container[0];
       el.innerHTML = infoText;
-      el.setAttribute('class', 'smime-sender-gmail');
+      el.setAttribute('class', 'smime-sender-gmail tooltip');
+      el.setAttribute('title', message);
       index.parentNode.insertBefore(el, index);
     }
   }

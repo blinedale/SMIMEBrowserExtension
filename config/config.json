@@ -7,6 +7,12 @@
       "results": "results"
     }
   },
+  "tooltipster": {
+    "selector": ".tooltip",
+    "animation": "fade",
+    "theme": "tooltipster-punk",
+    "trigger": "hover"
+  },
   "inboxSDK": {
     "API_VERSION": 2,
     "API_KEY": "c2RrX1JvY2tldFNNSU1FXzRlYWMzM2FhNjU="
