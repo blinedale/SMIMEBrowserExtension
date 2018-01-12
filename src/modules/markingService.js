@@ -20,6 +20,7 @@ class MarkingService {
       this.markForGmail(domMessage, result, iconUrl, infoText);
     }
     this.tooltip.addTooltip(result.message);
+    this.overwriteGoogleWarning();
   }
 
   markForInbox(domMessage, result, iconUrl, infoText) {
@@ -54,6 +55,22 @@ class MarkingService {
     domMessage.addAttachmentIcon(messageAttachmentIconDescriptor);
 
     this.addInfoText(markedClassName, infoText, result.message);
+  }
+
+  overwriteGoogleWarning() {
+    const message = 'We can validate this signature just fine. Hugs from Rocket Internet SE.';
+    const trigger = document.querySelector("div[role='menuitem'] img");
+    trigger.addEventListener('click', () => {
+      let elem = document.querySelector('td.gL');
+      if (elem == null) {
+        return false;
+      }
+
+      if(elem.innerHTML.indexOf(" Verified email address ") != -1) {
+        let content = document.createTextNode(`${message}`);
+        elem.appendChild(content);
+      }
+    });
   }
 
   createCustomIcon(iconUrl, message) {
