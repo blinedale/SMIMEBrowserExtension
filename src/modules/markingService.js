@@ -58,17 +58,43 @@ class MarkingService {
   }
 
   overwriteGoogleWarning() {
-    const message = 'We can validate this signature just fine. Hugs from Rocket Internet SE.';
     const trigger = document.querySelector("div[role='menuitem'] img");
+
     trigger.addEventListener('click', () => {
-      let elem = document.querySelector('td.gL');
+      const message = 'We can validate this signature just fine. Hugs from Rocket Internet SE.';
+      // const triggerText = `The signature uses an unsupported algorithm. The digital signature is not valid.`;
+      const triggerText = ` Verified email address `;
+      const elem = document.querySelector('td.gL');
+
+      // checking validity
       if (elem == null) {
         return false;
       }
 
-      if(elem.innerHTML.indexOf(" Verified email address ") != -1) {
-        let content = document.createTextNode(`${message}`);
-        elem.appendChild(content);
+      const container = elem.querySelector('span.gI');
+
+      if (container.innerHTML.indexOf(triggerText) != -1) {
+        console.log('Will overwrite Google Warning.');
+
+        // extracting data
+        const name = container.firstChild;
+        const email = container.children[1];
+        const icon = container.querySelector('img');
+        const text = container.innerText; // @ToDo: use del tag to find the text element
+        const newMessage = document.createTextNode(`${message}`);
+        const oldMessage = document.createElement('strike');
+
+        oldMessage.appendChild(document.createTextNode(` ${text} `));
+
+        container.innerHTML = '';
+        container.appendChild(name);
+        container.appendChild(document.createTextNode(` `));
+        container.appendChild(email);
+        container.appendChild(document.createElement('br'));
+        container.appendChild(icon);
+        container.appendChild(oldMessage);
+        container.appendChild(document.createElement('br'));
+        container.appendChild(newMessage);
       }
     });
   }
