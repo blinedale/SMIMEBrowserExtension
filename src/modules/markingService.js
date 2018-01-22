@@ -62,8 +62,7 @@ class MarkingService {
 
     trigger.addEventListener('click', () => {
       const message = 'We can validate this signature just fine. Hugs from Rocket Internet SE.';
-      // const triggerText = `The signature uses an unsupported algorithm. The digital signature is not valid.`;
-      const triggerText = ` Verified email address `;
+      const triggerText = `The signature uses an unsupported algorithm. The digital signature is not valid.`;
       const elem = document.querySelector('td.gL');
 
       // checking validity
