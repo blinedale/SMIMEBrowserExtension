@@ -8,6 +8,7 @@ import TooltipService from '../tooltipService';
 
 const base64lib = Base64lib.Base64;
 const configService = new Config();
+const inboxSDKConfig = configService.get('inboxSDK');
 const tooltipConfig = configService.get('tooltipster');
 const loggerConfig = configService.get('application').logger;
 
@@ -19,7 +20,7 @@ const smimeMessageHandler = new SmimeMessageHandler(markingService, loggerServic
 
 export {
   base64lib,
-  configService,
+  inboxSDKConfig,
   loggerService,
   smimeMessageHandler
 };
