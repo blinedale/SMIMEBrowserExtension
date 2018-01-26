@@ -77,32 +77,6 @@ class SmimeVerificationService {
       // Get content of email that was signed. Should be entire first child node.
       const signedDataBuffer = stringToArrayBuffer(parser.nodes.node1.raw.replace(/\n/g, "\r\n"));
 
-      /*
-      console.log('generating ocsp thing');
-      const ocspreq = new OCSPRequest();
-      ocspreq.createForCertificate(cmsSignedSimpl.certificates[0], {hashAlgorithm: 'SHA-256', issuerCertificate: cmsSignedSimpl.certificates[1]})
-        .then(() => {
-        console.log('we now have ocsprequest');
-        console.log(ocspreq);
-
-        const ocspSchema = ocspreq.toSchema(false);
-
-        console.log('ocspSchema');
-        console.log(ocspSchema);
-
-        const ocspreqBuffer = ocspSchema.toBER(false);
-
-        const ocspreqAsBitArray = new Uint8Array(ocspreqBuffer);
-
-        // ocspreq in base64:
-        const ocspDataString = String.fromCharCode.apply(null, ocspreqAsBitArray);
-        const base64String = window.btoa(ocspDataString);
-        console.log('ocsp req in base64:');
-        console.log(base64String);
-
-      });
-      */
-
       const verificationOptions = {
         signer: 0, // index to use in array in cmsSignedSimpl.signerInfos - this is always 0
         data: signedDataBuffer,
