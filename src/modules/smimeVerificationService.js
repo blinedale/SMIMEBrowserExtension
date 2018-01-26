@@ -1,7 +1,6 @@
 import MimeParser from 'emailjs-mime-parser';
 import {stringToArrayBuffer, utilConcatBuf} from 'pvutils';
 import * as asn1js from 'asn1js';
-// import { SignedData, ContentInfo, OCSPRequest } from 'pkijs';
 import {SignedData, ContentInfo} from 'pkijs';
 
 import getResultPrototype from './resultPrototype';
@@ -11,6 +10,10 @@ import smimeVerificationResultCodes from '../constants/smimeVerificationResultCo
 class SmimeVerificationService {
   constructor(trustedRootCerts) {
     this.trustedRootCerts = trustedRootCerts;
+  }
+
+  setTrustedRoots(trustedRoots) {
+    this.trustedRootCerts = trustedRoots;
   }
 
   /**

@@ -3,18 +3,30 @@ import * as Base64lib from 'js-base64';
 import Config from '../config';
 import Logger from '../logger';
 import DbHandler from '../dbHandler';
-import * as asn1js from 'asn1js';
-import {stringToArrayBuffer} from 'pvutils';
-import {Certificate} from "pkijs";
+import CertificateProvider from '../certificateProvider';
+import CertificateParser from '../certificateParser';
 
 const base64lib = Base64lib.Base64;
 const configService = new Config();
 const dbConfig = configService.get('db');
-const loggerConfig = configService.get('application').logger;
+const applicationConfig = configService.get('application');
+const loggerConfig = applicationConfig.logger;
 
 const loggerService = new Logger(loggerConfig);
 const dbHandler = new DbHandler(dbConfig, loggerService, base64lib);
 
+const certificateParser = new CertificateParser(base64lib);
+
+const certificateConfig = applicationConfig.certificates;
+const certificateProvider = new CertificateProvider(certificateConfig, certificateParser);
+
+const smimeVerificationService = new SmimeVerificationService();
+
+certificateProvider.parseTrustedRootCertificates().then(trustedRoots => smimeVerificationService.setTrustedRoots(trustedRoots));
+
+//const trustedRootCertificates = certificateProvider.getTrustedRootCertificates();
+
+/*
 const comodoRootCert = "-----BEGIN CERTIFICATE-----\n" +
   "MIIF2DCCA8CgAwIBAgIQTKr5yttjb+Af907YWwOGnTANBgkqhkiG9w0BAQwFADCB\n" +
   "hTELMAkGA1UEBhMCR0IxGzAZBgNVBAgTEkdyZWF0ZXIgTWFuY2hlc3RlcjEQMA4G\n" +
@@ -50,22 +62,11 @@ const comodoRootCert = "-----BEGIN CERTIFICATE-----\n" +
   "NVOFBkpdn627G190\n" +
   "-----END CERTIFICATE-----\n";
 
-// read comodo CA
-const certificateBuffer = stringToArrayBuffer(window.atob(comodoRootCert.replace(/(-----(BEGIN|END)( NEW)? CERTIFICATE-----|\n)/g, "").replace(/\n/g, "\r\n")));
-
-const asn1ParsedCertificate = asn1js.fromBER(certificateBuffer);
-
-if (asn1ParsedCertificate.offset === (-1)) {
-  console.error("S/MIME error: Cert could not be parsed by the ASN.1 library.");
-//  return;
-}
-
-const certificate = new Certificate({schema: asn1ParsedCertificate.result});
+const certificate = certificateParser.parseCertificate(comodoRootCert);
 
 console.log('logging cert');
 console.log(certificate);
-
-const smimeVerificationService = new SmimeVerificationService([certificate]);
+*/
 
 export {
   smimeVerificationService,

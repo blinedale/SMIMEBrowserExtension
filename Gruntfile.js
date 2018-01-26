@@ -58,6 +58,17 @@ module.exports = function(grunt) {
         }]
       },
 
+      certificates: {
+        files: [{
+          expand: true,
+          cwd: 'certificates/',
+          src: [
+            '*'
+          ],
+          dest: 'build/tmp/'
+        }]
+      },
+
       common: {
         files: [{
           expand: true,
@@ -232,6 +243,7 @@ module.exports = function(grunt) {
       'copy:chrome',
       'copy:firefox',
       'copy:config',
+      'copy:certificates',
       'copy:common',
       'replace:about_popup',
       'webpack:build',

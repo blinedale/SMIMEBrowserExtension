@@ -21,6 +21,9 @@
     "logger": {
       "debugMode": true,
       "prefix": "Rocket S/MIME Browser Extension: "
+    },
+    "certificates": {
+      "filename": "IncludedCACertificateWithPEMReport.csv"
     }
   }
 }

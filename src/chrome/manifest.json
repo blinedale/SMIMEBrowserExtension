@@ -40,8 +40,6 @@
   "permissions": [
     "declarativeContent",
     "https://mail.google.com/*",
-    "https://mail-attachment.googleusercontent.com/*",
-    "http://ocsp.comodoca.com/*",
-    "http://crl.comodoca.com/*"
+    "https://mail-attachment.googleusercontent.com/*"
   ]
 }
