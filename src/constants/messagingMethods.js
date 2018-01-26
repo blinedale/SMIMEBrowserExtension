@@ -1,5 +1,7 @@
 const messagingMethods = {
-  verifyMessageSignature: "verifyMessageSignature",
+  verifyMessageSignature: `verifyMessageSignature`,
+  getSavedResult: `getSavedResult`,
+  saveResult: `saveResult`
 };
 
 export default messagingMethods;
