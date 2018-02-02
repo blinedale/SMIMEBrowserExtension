@@ -25,6 +25,10 @@ class SmimeMessageHandler {
     try {
       //send to background and process response
       chrome.runtime.sendMessage({method: messagingMethods.verifyMessageSignature, rawMessage, mailId}, result => {
+        if (!result.mailId) {
+          throw `Verification service was not correctly initialized.`;
+        }
+
         this.loggerService.log(`Reached conclusive result in S/MIME verification of mail id ${mailId}. Will attempt to save it.`);
         this.loggerService.log(result);
 

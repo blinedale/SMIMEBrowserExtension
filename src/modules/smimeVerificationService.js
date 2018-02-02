@@ -8,8 +8,12 @@ import smimeSpecificationConstants from '../constants/smimeSpecificationConstant
 import smimeVerificationResultCodes from '../constants/smimeVerificationResultCodes';
 
 class SmimeVerificationService {
-  constructor(trustedRootCerts) {
-    this.trustedRootCerts = trustedRootCerts;
+  /**
+   * @param {Logger} loggerService
+   */
+  constructor(loggerService) {
+    this.trustedRootCerts = [];
+    this.logger = loggerService;
   }
 
   setTrustedRoots(trustedRoots) {
@@ -28,6 +32,13 @@ class SmimeVerificationService {
   verifyMessageSignature(rawMessage, mailId) {
     return new Promise(resolve => {
       const result = getResultPrototype();
+
+      if (this.trustedRootCerts.length === 0) {
+        return resolve(result); // Returning empty result if we do not have root certs.
+      }
+
+      this.logger.log(`nr certs ${this.trustedRootCerts.length}`);
+
       result.mailId = mailId;
 
       const parser = new MimeParser();
@@ -35,7 +46,7 @@ class SmimeVerificationService {
       parser.end();
 
       // S/MIME signature must be in content node 2. Email content is in content node 1.
-      const signatureNode = parser.getNode("2");
+      const signatureNode = parser.getNode(`2`);
 
       if (!this.isValidSmimeEmail(parser.node, signatureNode)) {
         result.code = smimeVerificationResultCodes.CANNOT_VERIFY;
@@ -45,7 +56,6 @@ class SmimeVerificationService {
 
       let cmsSignedSimpl = null;
       let signerEmail = '';
-      let signerIndex = null;
 
       try {
         // Get signature buffer
@@ -55,13 +65,16 @@ class SmimeVerificationService {
 
         cmsSignedSimpl = this.getSignedDataFromAsn1(asn1);
 
-        ({signerEmail, signerIndex} = this.fetchSignerEmail(cmsSignedSimpl));
+        signerEmail = this.fetchSignerEmail(cmsSignedSimpl);
       }
       catch (ex) {
         result.code = smimeVerificationResultCodes.FRAUD_WARNING;
         result.message = `Invalid digital signature.`;
         return resolve(result);
       }
+
+      this.logger.log(`Dumping certificates.`);
+      this.logger.log(cmsSignedSimpl);
 
       /* We have to check for expiration here since we cannot do OCSP on expired certs.
          Ergo, if it's expired, it's impossible to know if the cert is revoked or not.
@@ -71,11 +84,6 @@ class SmimeVerificationService {
         result.message = `The signature's certificate has expired. Be wary of message content.`;
         return resolve(result);
       }
-
-      console.log('logging cmsSignedSimpl');
-      console.log(cmsSignedSimpl);
-      console.log(signerEmail);
-      console.log(signerIndex);
 
       // Get content of email that was signed. Should be entire first child node.
       const signedDataBuffer = stringToArrayBuffer(parser.nodes.node1.raw.replace(/\n/g, "\r\n"));
@@ -126,21 +134,19 @@ class SmimeVerificationService {
   /**
    * Get signer's email address from signature
    * @param {SignedData} signedData
-   * @returns {object}
+   * @returns {String}
    */
   fetchSignerEmail(signedData) {
     let signerEmail = null;
-    let signerIndex = null;
     Object.keys(signedData.certificates).forEach(certKey => {
       Object.keys(signedData.certificates[certKey].subject.typesAndValues).forEach(subjectKey => {
         const type = signedData.certificates[certKey].subject.typesAndValues[subjectKey].type;
         if (type == smimeSpecificationConstants.certificateTypeForSignerEmail) {
           signerEmail = signedData.certificates[certKey].subject.typesAndValues[subjectKey].value.valueBlock.value;
-          signerIndex = certKey;
         }
       });
     });
-    return {signerEmail, signerIndex};
+    return signerEmail;
   }
 
   /**

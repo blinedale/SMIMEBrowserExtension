@@ -14,7 +14,8 @@ module.exports = function(grunt) {
       options: {
         maxWarnings: 10,
         configFile: 'eslint.json',
-        cache: true
+        cache: true,
+        fix: true
       },
       target: [
         '*.js',
