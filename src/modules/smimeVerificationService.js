@@ -157,11 +157,12 @@ class SmimeVerificationService {
   }
 
   isRootNodeContentTypeProtocolCorrect(rootNode) {
-    return rootNode.contentType.params.protocol === smimeSpecificationConstants.rootNodeContentTypeProtocol;
+    return smimeSpecificationConstants.rootNodeContentTypeProtocol.indexOf(rootNode.contentType.params.protocol) !== -1;
   }
 
   isRootNodeContentTypeMicalgCorrect(rootNode) {
-    return smimeSpecificationConstants.rootNodeContentTypeMessageIntegrityCheckAlgorithms.indexOf(rootNode.contentType.params.micalg) !== -1;
+    const lowerCaseMicalg = rootNode.contentType.params.micalg.toLowerCase();
+    return smimeSpecificationConstants.rootNodeContentTypeMessageIntegrityCheckAlgorithms.indexOf(lowerCaseMicalg) !== -1;
   }
 
   isSignatureNodeContentTypeValueCorrect(signatureNode) {
