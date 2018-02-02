@@ -1,4 +1,4 @@
-import SmimeVerificationService from "../smimeVerificationService";
+import SmimeVerificationService from '../smimeVerificationService';
 import * as Base64lib from 'js-base64';
 import Config from '../config';
 import Logger from '../logger';

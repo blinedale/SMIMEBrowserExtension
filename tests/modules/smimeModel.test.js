@@ -11,9 +11,12 @@ import {
   emailWithValidSignatureAndManipulatedMessage,
   emailWithValidSignatureAndExpiredCertificate
 } from "../helpers/smimeEmails";
+import MockLogger from "../helpers/mockLogger";
 
 describe('SmimeVerificationService', () => {
-  const smimeVerificationService = new SmimeVerificationService();
+  const mockLogger = new MockLogger();
+
+  const smimeVerificationService = new SmimeVerificationService(mockLogger, false);
   const isValidSmimeEmailSpy = sinon.spy(smimeVerificationService, 'isValidSmimeEmail');
   const isRootNodeContentTypeValueCorrectSpy = sinon.spy(smimeVerificationService, 'isRootNodeContentTypeValueCorrect');
   const isRootNodeContentTypeProtocolCorrectSpy = sinon.spy(smimeVerificationService, 'isRootNodeContentTypeProtocolCorrect');

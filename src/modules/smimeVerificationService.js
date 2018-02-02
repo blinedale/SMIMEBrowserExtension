@@ -10,10 +10,12 @@ import smimeVerificationResultCodes from '../constants/smimeVerificationResultCo
 class SmimeVerificationService {
   /**
    * @param {Logger} loggerService
+   * @param {boolean} requireRootCerts
    */
-  constructor(loggerService) {
+  constructor(loggerService, requireRootCerts = true) {
     this.trustedRootCerts = [];
     this.logger = loggerService;
+    this.requireRootCerts = requireRootCerts;
   }
 
   setTrustedRoots(trustedRoots) {
@@ -33,7 +35,7 @@ class SmimeVerificationService {
     return new Promise(resolve => {
       const result = getResultPrototype();
 
-      if (this.trustedRootCerts.length === 0) {
+      if (this.requireRootCerts && this.trustedRootCerts.length === 0) {
         return resolve(result); // Returning empty result if we do not have root certs.
       }
 
@@ -88,13 +90,20 @@ class SmimeVerificationService {
       // Get content of email that was signed. Should be entire first child node.
       const signedDataBuffer = stringToArrayBuffer(parser.nodes.node1.raw.replace(/\n/g, "\r\n"));
 
-      const verificationOptions = {
+      let verificationOptions = {
         signer: 0, // index to use in array in cmsSignedSimpl.signerInfos - this is always 0
         data: signedDataBuffer,
         checkChain: true,
         extendedMode: true,
         trustedCerts: this.trustedRootCerts
       };
+
+      if (!this.requireRootCerts) {
+        verificationOptions = {
+          signer: 0,
+          data: signedDataBuffer
+        };
+      }
 
       // Verify the signed data
       cmsSignedSimpl.verify(verificationOptions).then(verificationResult => {
