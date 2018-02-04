@@ -19,7 +19,7 @@ class MarkingService {
     } else { // gmail mode activated
       this.markForGmail(domMessage, result, iconUrl, infoText);
     }
-    this.tooltip.addTooltip(result.message);
+    this.tooltip.addTooltip(result);
   }
 
   markForInbox(domMessage, result, iconUrl, infoText) {

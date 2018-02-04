@@ -10,7 +10,8 @@
   "tooltipster": {
     "selector": ".tooltip",
     "animation": "fade",
-    "theme": "tooltipster-punk",
+    "themeSuccess": "tooltipster-noir",
+    "themeError": "tooltipster-noir",
     "trigger": "hover"
   },
   "inboxSDK": {

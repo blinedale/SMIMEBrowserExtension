@@ -20,7 +20,12 @@
     {
       "matches": ["*://mail.google.com/*", "*://inbox.google.com/*"],
       "exclude_matches": ["*://mail.google.com/mail/mu/*"],
-      "css": ["css/style.css", "css/tooltipster.bundle.min.css", "css/tooltipster-punk.min.css"],
+      "css": [
+        "css/style.css",
+        "css/tooltipster.bundle.min.css",
+        "css/tooltipster-punk.min.css",
+        "css/tooltipster-noir.min.css"
+      ],
       "js": [
         "lib/jquery-1.10.0.min.js",
         "lib/tooltipster.bundle.min.js",
