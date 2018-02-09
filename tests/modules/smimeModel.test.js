@@ -14,6 +14,9 @@ import {
 import MockLogger from "../helpers/mockLogger";
 
 describe('SmimeVerificationService', () => {
+
+  /* NOTE: All included test data was made with certificates that expire in September 2018. */
+
   const mockLogger = new MockLogger();
 
   const smimeVerificationService = new SmimeVerificationService(mockLogger, false);
@@ -24,6 +27,8 @@ describe('SmimeVerificationService', () => {
   const isSignatureNodeContentTypeValueCorrectSpy = sinon.spy(smimeVerificationService, 'isSignatureNodeContentTypeValueCorrect');
   const getAsn1TypeFromBufferSpy = sinon.spy(smimeVerificationService, 'getAsn1TypeFromBuffer');
   const getSignedDataFromAsn1Spy = sinon.spy(smimeVerificationService, 'getSignedDataFromAsn1');
+  const fetchSignerEmailSpy = sinon.spy(smimeVerificationService, 'fetchSignerEmail');
+  const isAnyCertificateExpiredSpy = sinon.spy(smimeVerificationService, 'isAnyCertificateExpired');
   const isVerificationFailedSpy = sinon.spy(smimeVerificationService, 'isVerificationFailed');
   const isFromAddressCorrectSpy = sinon.spy(smimeVerificationService, 'isFromAddressCorrect');
 
@@ -42,6 +47,8 @@ describe('SmimeVerificationService', () => {
           expect(isSignatureNodeContentTypeValueCorrectSpy.notCalled).toBe(true);
           expect(getAsn1TypeFromBufferSpy.notCalled).toBe(true);
           expect(getSignedDataFromAsn1Spy.notCalled).toBe(true);
+          expect(fetchSignerEmailSpy.notCalled).toBe(true);
+          expect(isAnyCertificateExpiredSpy.notCalled).toBe(true);
           expect(isVerificationFailedSpy.notCalled).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
@@ -62,6 +69,8 @@ describe('SmimeVerificationService', () => {
           expect(isSignatureNodeContentTypeValueCorrectSpy.notCalled).toBe(true);
           expect(getAsn1TypeFromBufferSpy.notCalled).toBe(true);
           expect(getSignedDataFromAsn1Spy.notCalled).toBe(true);
+          expect(fetchSignerEmailSpy.notCalled).toBe(true);
+          expect(isAnyCertificateExpiredSpy.notCalled).toBe(true);
           expect(isVerificationFailedSpy.notCalled).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
@@ -85,6 +94,8 @@ describe('SmimeVerificationService', () => {
           expect(isSignatureNodeContentTypeValueCorrectSpy.notCalled).toBe(true);
           expect(getAsn1TypeFromBufferSpy.notCalled).toBe(true);
           expect(getSignedDataFromAsn1Spy.notCalled).toBe(true);
+          expect(fetchSignerEmailSpy.notCalled).toBe(true);
+          expect(isAnyCertificateExpiredSpy.notCalled).toBe(true);
           expect(isVerificationFailedSpy.notCalled).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
@@ -111,6 +122,8 @@ describe('SmimeVerificationService', () => {
           expect(isSignatureNodeContentTypeValueCorrectSpy.notCalled).toBe(true);
           expect(getAsn1TypeFromBufferSpy.notCalled).toBe(true);
           expect(getSignedDataFromAsn1Spy.notCalled).toBe(true);
+          expect(fetchSignerEmailSpy.notCalled).toBe(true);
+          expect(isAnyCertificateExpiredSpy.notCalled).toBe(true);
           expect(isVerificationFailedSpy.notCalled).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
@@ -137,6 +150,8 @@ describe('SmimeVerificationService', () => {
           expect(isSignatureNodeContentTypeValueCorrectSpy.notCalled).toBe(true);
           expect(getAsn1TypeFromBufferSpy.notCalled).toBe(true);
           expect(getSignedDataFromAsn1Spy.notCalled).toBe(true);
+          expect(fetchSignerEmailSpy.notCalled).toBe(true);
+          expect(isAnyCertificateExpiredSpy.notCalled).toBe(true);
           expect(isVerificationFailedSpy.notCalled).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
@@ -163,6 +178,8 @@ describe('SmimeVerificationService', () => {
           expect(isSignatureNodeContentTypeValueCorrectSpy.notCalled).toBe(true);
           expect(getAsn1TypeFromBufferSpy.notCalled).toBe(true);
           expect(getSignedDataFromAsn1Spy.notCalled).toBe(true);
+          expect(fetchSignerEmailSpy.notCalled).toBe(true);
+          expect(isAnyCertificateExpiredSpy.notCalled).toBe(true);
           expect(isVerificationFailedSpy.notCalled).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
@@ -189,6 +206,8 @@ describe('SmimeVerificationService', () => {
           expect(isSignatureNodeContentTypeValueCorrectSpy.calledOnce).toBe(true);
           expect(getAsn1TypeFromBufferSpy.notCalled).toBe(true);
           expect(getSignedDataFromAsn1Spy.notCalled).toBe(true);
+          expect(fetchSignerEmailSpy.notCalled).toBe(true);
+          expect(isAnyCertificateExpiredSpy.notCalled).toBe(true);
           expect(isVerificationFailedSpy.notCalled).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
@@ -219,6 +238,8 @@ describe('SmimeVerificationService', () => {
           expect(isSignatureNodeContentTypeValueCorrectSpy.calledOnce).toBe(true);
           expect(getAsn1TypeFromBufferSpy.calledOnce).toBe(true);
           expect(getSignedDataFromAsn1Spy.notCalled).toBe(true);
+          expect(fetchSignerEmailSpy.notCalled).toBe(true);
+          expect(isAnyCertificateExpiredSpy.notCalled).toBe(true);
           expect(isVerificationFailedSpy.notCalled).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
@@ -244,6 +265,8 @@ describe('SmimeVerificationService', () => {
           expect(isSignatureNodeContentTypeValueCorrectSpy.calledOnce).toBe(true);
           expect(getAsn1TypeFromBufferSpy.calledOnce).toBe(true);
           expect(getSignedDataFromAsn1Spy.calledOnce).toBe(true);
+          expect(fetchSignerEmailSpy.notCalled).toBe(true);
+          expect(isAnyCertificateExpiredSpy.notCalled).toBe(true);
           expect(isVerificationFailedSpy.notCalled).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
@@ -263,6 +286,8 @@ describe('SmimeVerificationService', () => {
           expect(isSignatureNodeContentTypeValueCorrectSpy.calledOnce).toBe(true);
           expect(getAsn1TypeFromBufferSpy.calledOnce).toBe(true);
           expect(getSignedDataFromAsn1Spy.calledOnce).toBe(true);
+          expect(fetchSignerEmailSpy.calledOnce).toBe(true);
+          expect(isAnyCertificateExpiredSpy.calledOnce).toBe(true);
           expect(isVerificationFailedSpy.notCalled).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
@@ -284,6 +309,8 @@ describe('SmimeVerificationService', () => {
           expect(isSignatureNodeContentTypeValueCorrectSpy.calledOnce).toBe(true);
           expect(getAsn1TypeFromBufferSpy.calledOnce).toBe(true);
           expect(getSignedDataFromAsn1Spy.calledOnce).toBe(true);
+          expect(fetchSignerEmailSpy.calledOnce).toBe(true);
+          expect(isAnyCertificateExpiredSpy.calledOnce).toBe(true);
           expect(isVerificationFailedSpy.calledOnce).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
@@ -302,12 +329,16 @@ describe('SmimeVerificationService', () => {
           expect(isSignatureNodeContentTypeValueCorrectSpy.calledOnce).toBe(true);
           expect(getAsn1TypeFromBufferSpy.calledOnce).toBe(true);
           expect(getSignedDataFromAsn1Spy.calledOnce).toBe(true);
+          expect(fetchSignerEmailSpy.calledOnce).toBe(true);
+          expect(isAnyCertificateExpiredSpy.calledOnce).toBe(true);
           expect(isVerificationFailedSpy.calledOnce).toBe(true);
           expect(isFromAddressCorrectSpy.calledOnce).toBe(true);
         }
       );
     });
     */
+
+    // TODO: Case where we include trustedCerts and fail
   });
 
   describe('valid signed email', () => {
