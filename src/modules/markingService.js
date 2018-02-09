@@ -37,7 +37,8 @@ class MarkingService {
 
     const el = document.createElement('span');
     el.innerHTML = infoText;
-    el.setAttribute('class', 'smime-sender-inbox');
+    el.setAttribute('class', 'smime-sender-inbox tooltip');
+    el.setAttribute('title', result.message);
     headerElement.insertBefore(el, headerDateElement);
     headerElement.insertBefore(this.createCustomIcon(iconUrl, result.message), headerDateElement);
   }
@@ -60,6 +61,7 @@ class MarkingService {
     const el = document.createElement('img');
     el.setAttribute('src', iconUrl);
     el.setAttribute('title', message);
+    el.setAttribute('class', 'tooltip');
 
     return el;
   }
