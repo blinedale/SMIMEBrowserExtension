@@ -39,6 +39,12 @@ Verification results are stored in the local IndexedDB in the browser so we do n
 
 Note that we currently do not check if a certificate has been revoked during verification. This means that emails signed with revoked certificates will show up as valid if everything else checks out.
 
+## Trusted certificate authorities
+
+The set of trusted certificate authorities is fetched from [Mozilla](https://wiki.mozilla.org/CA/Included_Certificates). We parse the raw PEM data into PKI.js Certificate objects on boot. 
+
+During verification, we check the entire chain of certificates up to the root certificate - this must be a trusted CA or the verification fails.  
+
 ## Road map
 
 - Checking if a certificate is revoked during verification

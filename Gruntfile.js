@@ -14,7 +14,8 @@ module.exports = function(grunt) {
       options: {
         maxWarnings: 10,
         configFile: 'eslint.json',
-        cache: true
+        cache: true,
+        fix: true
       },
       target: [
         '*.js',
@@ -53,6 +54,17 @@ module.exports = function(grunt) {
           cwd: 'config/',
           src: [
             'config.json'
+          ],
+          dest: 'build/tmp/'
+        }]
+      },
+
+      certificates: {
+        files: [{
+          expand: true,
+          cwd: 'certificates/',
+          src: [
+            '*'
           ],
           dest: 'build/tmp/'
         }]
@@ -232,6 +244,7 @@ module.exports = function(grunt) {
       'copy:chrome',
       'copy:firefox',
       'copy:config',
+      'copy:certificates',
       'copy:common',
       'replace:about_popup',
       'webpack:build',
