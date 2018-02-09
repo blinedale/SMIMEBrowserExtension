@@ -19,7 +19,7 @@ describe('SmimeVerificationService', () => {
 
   const mockLogger = new MockLogger();
 
-  const smimeVerificationService = new SmimeVerificationService();
+  const smimeVerificationService = new SmimeVerificationService(mockLogger, false);
   const isValidSmimeEmailSpy = sinon.spy(smimeVerificationService, 'isValidSmimeEmail');
   const isRootNodeContentTypeValueCorrectSpy = sinon.spy(smimeVerificationService, 'isRootNodeContentTypeValueCorrect');
   const isRootNodeContentTypeProtocolCorrectSpy = sinon.spy(smimeVerificationService, 'isRootNodeContentTypeProtocolCorrect');
