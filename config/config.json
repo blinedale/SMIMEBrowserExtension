@@ -10,7 +10,7 @@
   "tooltipster": {
     "selector": ".tooltip",
     "animation": "fade",
-    "themeSuccess": "tooltipster-noir",
+    "themeSuccess": "tooltipster-punk",
     "themeError": "tooltipster-noir",
     "trigger": "hover"
   },

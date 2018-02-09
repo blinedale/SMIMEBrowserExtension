@@ -1,12 +1,13 @@
+import smimeVerificationResultCodes from "../constants/smimeVerificationResultCodes";
+
 class TooltipService {
   constructor(config) {
     this.config = config;
   }
 
   addTooltip(result) {
-    console.log(result);
     let messageTheme = this.config.themeError;
-    if (result.code === "VERIFICATION_OK") {
+    if (result.code === smimeVerificationResultCodes.VERIFICATION_OK) {
       messageTheme = this.config.themeSuccess;
     }
 
