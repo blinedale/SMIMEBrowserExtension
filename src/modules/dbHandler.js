@@ -5,7 +5,13 @@ class DbHandler {
     this.loggerService = loggerService;
     this.base64lib = base64lib;
 
-    this.getDb().then(db => { this.db = db; });
+    this.getDb().then(db => {
+      this.db = db;
+      this.db.onerror = event => {
+        this.loggerService.err(`Uncaught database error:`);
+        this.loggerService.err(event);
+      };
+    });
 
     // eslint-disable-next-line no-unused-vars
     window.onunload = () => {
@@ -127,18 +133,25 @@ class DbHandler {
       resultObjectClone.signer =  this.base64lib.encode(resultObjectClone.signer);
 
       const transaction = this.db.transaction([this.dbConfig.stores.results], `readwrite`);
-      const resultStore = transaction.objectStore(this.dbConfig.stores.results);
-      const request = resultStore.put(resultObjectClone);
 
-      request.onerror = event => {
-        this.loggerService.err(`Ran into an error when saving result for mail id ${resultObject.mailId}`);
+      const resultStore = transaction.objectStore(this.dbConfig.stores.results);
+      resultStore.put(resultObjectClone);
+
+      transaction.oncomplete = () => {
+        this.loggerService.log(`Save success for mail id ${resultObjectClone.mailId}`);
+        return resolve(resultObjectClone.mailId);
+      };
+
+      transaction.onerror = event => {
+        this.loggerService.err(`Ran into an error when saving result for mail id ${resultObjectClone.mailId}`);
         this.loggerService.err(event);
         return resolve(null);
       };
 
-      request.onsuccess = () => {
-        this.loggerService.log(`Save success for mail id ${resultObject.mailId}`);
-        return resolve(request.result);
+      transaction.onabort = event => {
+        this.loggerService.err(`Transaction was aborted when saving result for mail id ${resultObjectClone.mailId}`);
+        this.loggerService.err(event);
+        return resolve(null);
       };
     });
   }
