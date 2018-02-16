@@ -65,7 +65,6 @@ class MarkingService {
       const triggerText = `The signature uses an unsupported algorithm. The digital signature is not valid.`;
       const elem = document.querySelector('td.gL');
 
-      // checking validity
       if (elem == null) {
         return false;
       }
@@ -73,13 +72,9 @@ class MarkingService {
       const container = elem.querySelector('span.gI');
 
       if (container.innerHTML.indexOf(triggerText) != -1) {
-        console.log('Will overwrite Google Warning.');
-
-        // extracting data
         const name = container.firstChild;
         const email = container.children[1];
-        const icon = container.querySelector('img');
-        const text = container.innerText; // @ToDo: use del tag to find the text element
+        const text = container.innerText;
         const newMessage = document.createTextNode(`${message}`);
         const oldMessage = document.createElement('strike');
 
@@ -90,7 +85,6 @@ class MarkingService {
         container.appendChild(document.createTextNode(` `));
         container.appendChild(email);
         container.appendChild(document.createElement('br'));
-        container.appendChild(icon);
         container.appendChild(oldMessage);
         container.appendChild(document.createElement('br'));
         container.appendChild(newMessage);
