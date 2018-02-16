@@ -70,7 +70,6 @@ class MarkingService {
       }
 
       const container = elem.querySelector('span.gI');
-
       if (container.innerHTML.indexOf(triggerText) != -1) {
         const name = container.firstChild;
         const email = container.children[1];
@@ -80,14 +79,18 @@ class MarkingService {
 
         oldMessage.appendChild(document.createTextNode(` ${text} `));
 
-        container.innerHTML = '';
-        container.appendChild(name);
-        container.appendChild(document.createTextNode(` `));
-        container.appendChild(email);
-        container.appendChild(document.createElement('br'));
-        container.appendChild(oldMessage);
-        container.appendChild(document.createElement('br'));
-        container.appendChild(newMessage);
+        new Promise(() => setTimeout(() => {
+          const container = document.querySelector('td.gL').querySelector('span.gI');
+          container.innerHTML = '';
+          container.appendChild(oldMessage);
+          container.appendChild(document.createElement('br'));
+          container.appendChild(name);
+          container.appendChild(document.createTextNode(` `));
+          container.appendChild(email);
+          container.appendChild(document.createElement('br'));
+          container.appendChild(newMessage);
+        }, 1000));
+        elem.setAttribute('data-overwrite', true);
       }
     });
   }
