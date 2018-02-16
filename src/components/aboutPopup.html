@@ -51,6 +51,7 @@
     <p>If a message has a valid signature that matches the message content and the 'From' address matches the signer's email in the certificate, that email will be marked as verified.</p>
     <p>Message that look signed but where the verification fails for some reason will be marked with a warning.</p>
     <p>Please note that any email in a thread has to be opened completely to trigger a verification; we do not verify emails that are collapsed or hidden in previous thread history.</p>
+    <p>We verify the full chain of certificates up to the certificate authority. If the root certificate is not trusted, verification will fail and a warning will be displayed.</p>
     <p>Also, we currently do not check if a certificate has been revoked while verifying a message signature. Messages signed with a revoked certificate will currently be shown as verified if everything else checks out. We are working on adding this functionality.</p>
   </div>
   <div class="smime-popup-content">
@@ -61,6 +62,7 @@
     <p>All icons listed are available at <a href="https://www.flaticon.com" target="_blank">Flaticon</a> and are licensed under [Creative Commons BY 3.0]</p>
     <p>The functionality to fetch the full email source code was re-used from <a href="https://github.com/KartikTalwar/gmail.js" target="_blank">gmail.js</a> under their <a href="https://github.com/KartikTalwar/gmail.js/blob/master/LICENSE.md" target="_blank">MIT License</a> (Copyright (c) 2014 Kartik Talwar).</p>
     <p>The base library for catching events and manipulating the UI in Gmail and Inbox is <a href="https://www.inboxsdk.com" target="_blank">InboxSDK</a> which we are using as per their <a href="https://www.inboxsdk.com/terms" target="_blank">terms and conditions</a>.</p>
+    <p>This software is shipped with a copy of the list of trusted certificate authorities as defined by the <a href="https://wiki.mozilla.org/CA/Included_Certificates" target="_blank">Mozilla Foundation</a>.</p>
   </div>
 </div>
 </body>
