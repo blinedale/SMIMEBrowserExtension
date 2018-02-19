@@ -15,7 +15,7 @@ import MockLogger from "../helpers/mockLogger";
 
 describe('SmimeVerificationService', () => {
 
-  /* NOTE: All included test data was made with certificates that expire in September 2018. */
+  /* TODO: All included test data was made with certificates that expire in September 2018. */
 
   const mockLogger = new MockLogger();
 
@@ -353,6 +353,8 @@ describe('SmimeVerificationService', () => {
     isSignatureNodeContentTypeValueCorrectSpy.reset();
     getAsn1TypeFromBufferSpy.reset();
     getSignedDataFromAsn1Spy.reset();
+    fetchSignerEmailSpy.reset();
+    isAnyCertificateExpiredSpy.reset();
     isVerificationFailedSpy.reset();
     isFromAddressCorrectSpy.reset();
   });
