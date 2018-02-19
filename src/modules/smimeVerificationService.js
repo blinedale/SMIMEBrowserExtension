@@ -1,11 +1,12 @@
 import MimeParser from 'emailjs-mime-parser';
 import {stringToArrayBuffer, utilConcatBuf} from 'pvutils';
 import * as asn1js from 'asn1js';
-import {SignedData, ContentInfo} from 'pkijs';
+import {SignedData, ContentInfo, getAlgorithmByOID, OCSPRequest, CertID, AlgorithmIdentifier} from 'pkijs';
 
 import getResultPrototype from './resultPrototype';
 import smimeSpecificationConstants from '../constants/smimeSpecificationConstants';
 import smimeVerificationResultCodes from '../constants/smimeVerificationResultCodes';
+import BetterOCSPRequest from "./betterOCSPRequest";
 
 class SmimeVerificationService {
   /**
@@ -58,6 +59,7 @@ class SmimeVerificationService {
 
       let cmsSignedSimpl = null;
       let signerEmail = '';
+      let signerIndex = 0;
 
       try {
         // Get signature buffer
@@ -67,7 +69,7 @@ class SmimeVerificationService {
 
         cmsSignedSimpl = this.getSignedDataFromAsn1(asn1);
 
-        signerEmail = this.fetchSignerEmail(cmsSignedSimpl);
+        ({signerEmail, signerIndex} = this.fetchSignerEmail(cmsSignedSimpl));
       }
       catch (ex) {
         result.code = smimeVerificationResultCodes.FRAUD_WARNING;
@@ -77,6 +79,62 @@ class SmimeVerificationService {
 
       this.logger.log(`Dumping certificates.`);
       this.logger.log(cmsSignedSimpl);
+
+
+
+
+
+      //region one option for ocsp
+
+      const issuerCertIndex = signerIndex === 0 ? 1 : 0;
+
+      console.log('generating ocsp thing');
+      //      const ocspreq = new OCSPRequest();
+      const ocspreq = new BetterOCSPRequest();
+
+      //      const algParams = getAlgorithmByOID(cmsSignedSimpl.certificates[signerIndex].signature.algorithmId);
+      const algParams = getAlgorithmByOID("1.3.14.3.2.26"); //sha-1
+
+      //      const hashAlgorithm = {name: 'RSASSA-PKCS1-V1_5', hash: {name: 'SHA-256'}};
+      //      const options = {hashAlgorithm: 'SHA-256', issuerCertificate: cmsSignedSimpl.certificates[issuerCertIndex]};
+      //      const options = {hashAlgorithm: 'RSA', issuerCertificate: cmsSignedSimpl.certificates[issuerCertIndex]};
+      const options = {hashAlgorithm: algParams, issuerCertificate: cmsSignedSimpl.certificates[issuerCertIndex]};
+
+      ocspreq.createForCertificate(cmsSignedSimpl.certificates[signerIndex], options)
+      .then(() => {
+        console.log('we now have ocsprequest');
+        console.log(ocspreq);
+        const ocspSchema = ocspreq.toSchema(false);
+        console.log('ocspSchema');
+        console.log(ocspSchema);
+        const ocspreqBuffer = ocspSchema.toBER(false); // fails here now all of a sudden
+        const ocspreqAsBitArray = new Uint8Array(ocspreqBuffer);
+        // ocspreq in base64:
+        const ocspDataString = String.fromCharCode.apply(null, ocspreqAsBitArray);
+        const base64String = window.btoa(ocspDataString);
+        console.log('ocsp req in base64:');
+        console.log(base64String);
+      });
+      //endregion
+
+      //region another option for ocsp from pki.js examples
+
+      /*
+      const ocspReqSimpl = new OCSPRequest();
+
+      ocspReqSimpl.tbsRequest.requestList = [new Request({
+        reqCert: new CertID({
+          hashAlgorithm: new AlgorithmIdentifier({
+            algorithmId: cmsSignedSimpl.certificates[signerIndex].signature.algorithmId
+          }),
+          issuerNameHash: new asn1js.OctetString({ valueHex: fictionBuffer }),
+          issuerKeyHash: new asn1js.OctetString({ valueHex: fictionBuffer }),
+          serialNumber: new asn1js.Integer({ valueHex: fictionBuffer })
+        })
+      })];
+      */
+      //endregion
+
 
       /* We have to check for expiration here since we cannot do OCSP on expired certs.
          Ergo, if it's expired, it's impossible to know if the cert is revoked or not.
@@ -143,19 +201,21 @@ class SmimeVerificationService {
   /**
    * Get signer's email address from signature
    * @param {SignedData} signedData
-   * @returns {String}
+   * @returns {object}
    */
   fetchSignerEmail(signedData) {
     let signerEmail = null;
+    let signerIndex = null;
     Object.keys(signedData.certificates).forEach(certKey => {
       Object.keys(signedData.certificates[certKey].subject.typesAndValues).forEach(subjectKey => {
         const type = signedData.certificates[certKey].subject.typesAndValues[subjectKey].type;
         if (type == smimeSpecificationConstants.certificateTypeForSignerEmail) {
           signerEmail = signedData.certificates[certKey].subject.typesAndValues[subjectKey].value.valueBlock.value;
+          signerIndex = certKey;
         }
       });
     });
-    return signerEmail;
+    return {signerEmail, signerIndex};
   }
 
   /**
