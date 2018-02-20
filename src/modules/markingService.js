@@ -89,8 +89,7 @@ class MarkingService {
           container.appendChild(email);
           container.appendChild(document.createElement('br'));
           container.appendChild(newMessage);
-        }, 1000));
-        elem.setAttribute('data-overwrite', true);
+        }, 500));
       }
     });
   }
