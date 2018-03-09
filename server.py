@@ -1,41 +1,81 @@
-# from subprocess import run, PIPE
+# This script requires Python >= 3.5
 import subprocess
+import os
+import random
 
 def lambda_handler(event, context):
+
+    # get email from payload
+    email = 'tsergium@gmail.com';
+
+    client_certificate_subject_line = 'subject=/emailAddress=%s' % (email);
+
+    # TODO: random_suffix = generate_random_suffix()
+    random_suffix = '5'
+
+    signature_raw_path = '/tmp/signature%s' % (random_suffix);
+    signature_decoded_path = '/tmp/signatureDecoded%s' % (random_suffix);
+
+    client_certificate_path = '/tmp/clientCert%s.pem' % (random_suffix);
+    issuer_certificate_path = '/tmp/issuerCert%s.pem' % (random_suffix);
 
     # get signature from payload
     # signature = 'testsignature blabla'
 
-    # get email from payload
-    email = "tsergium@gmail.com";
-
-    client_certificate_subject_line = 'subject=/emailAddress=' + email;
-
-    randomNumber = '5'
-
-    signatureInfileName = '/tmp/signature' + randomNumber;
-    signatureOutfileName = '/tmp/signatureDecoded' + randomNumber;
-    # cliOutput = [];
-
-    clientCertificatePath = '/tmp/clientCert.pem' + randomNumber;
-    issuerCertificatePath = '/tmp/issuerCert.pem' + randomNumber;
-
     # write signature to file
-    # write_to_file(signatureInfileName, signature)
+    # write_to_file(signature_raw_path, signature)
 
-    output = subprocess.check_output('cat /tmp/stuff', shell=True)
+    exec_and_return_array('cat %s | base64 --decode > %s' % (signature_raw_path, signature_decoded_path))
+    cli_output = exec_and_return_array('openssl pkcs7 -in %s -inform DER -print_certs' % (signature_decoded_path))
 
-    subprocess.check_output('cat %s | base64 --decode > %s' % (signatureInfileName, signatureOutfileName), shell=True)
-    cli_output = subprocess.check_output('openssl pkcs7 -in %s -inform DER -print_certs' % (signatureOutfileName), shell=True, universal_newlines=True)
-    # print('got something')
-    # print(cli_output)
-
-    cli_output = cli_output.split("\n")
-    
+    # Parse client and issuer certificates
     client_certificate_array = find_certificate_with_subject_line(cli_output, client_certificate_subject_line)
-    print(client_certificate_array)
-    
 
+    issuer_string = find_issuer_in_certificate(client_certificate_array)
+    issuer_certificate_subject = issuer_string.replace('issuer=', 'subject=')
+    issuer_certificate_array = find_certificate_with_subject_line(cli_output, issuer_certificate_subject)
+
+    # Write certificates to disk
+    write_to_file(client_certificate_path, '\n'.join(client_certificate_array))
+    write_to_file(issuer_certificate_path, '\n'.join(issuer_certificate_array))
+
+    # Find client certificate serial number
+    cli_output = exec_and_return_array('openssl x509 -in %s -noout -serial' % (client_certificate_path))
+    client_certificate_serial_number = cli_output[0].replace('serial=', '')
+
+    # Find OCSP URL
+    cli_output = exec_and_return_array('openssl x509 -noout -ocsp_uri -in %s' % (client_certificate_path))
+    ocsp_url = cli_output[0];
+    
+    # Perform OCSP call and parse response
+    cli_output = exec_and_return_array('openssl ocsp -issuer %s -cert %s -url %s' % (issuer_certificate_path, client_certificate_path, ocsp_url))
+    ocsp_result = parse_ocsp_response(cli_output, client_certificate_path)
+    
+    # Cleaning up files
+    os.remove(client_certificate_path)
+    os.remove(issuer_certificate_path)
+    os.remove(signature_decoded_path)
+    # TODO: Remove signature file: os.remove(signature_raw_path)
+
+    # TODO: Build response and return it
+    return [client_certificate_serial_number, ocsp_result]
+
+    
+def parse_ocsp_response(cli_output, certificate_path):
+
+    # Looking for something like '[certificate path]: revoked/good'
+    prefix = certificate_path + ": "
+
+    for line in cli_output:
+        if (line.startswith(prefix)):
+            return line.replace(prefix, '')
+
+    # Could not find the results string
+    return 'unauthorized'        
+
+def exec_and_return_array(command_string):
+    cli_output = subprocess.check_output(command_string, shell=True, universal_newlines=True)
+    return cli_output.split('\n')
 
 def write_to_file(path, data):
     file = open(path, 'w')
@@ -57,12 +97,23 @@ def find_certificate_with_subject_line(cli_output, certificate_subject_line):
     # ...so we can find the first relevant -----END CERTIFICATE---- string
     end_index = sliced_list.index('-----END CERTIFICATE-----')
 
-    certificate_array = sliced_list[start_index:end_index+1]
+    certificate_array = sliced_list[:end_index+1]
 
     return certificate_array
 
+def find_issuer_in_certificate(certificate_array):
+
+    for line in certificate_array:
+        if line.startswith('issuer='):
+            return line
+
+    return ''
+
+def generate_random_suffix():
+    return str(random.randint(0, 1000000))
 
 
-print('hello')
-lambda_handler(None, None)    
-# find_certificate_with_subject_line(['a', 'b'], 'c')
+
+print('hello world')
+ocsp_result = lambda_handler(None, None)
+print(ocsp_result)
