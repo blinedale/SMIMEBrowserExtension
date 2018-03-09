@@ -5,10 +5,7 @@ import random
 
 def lambda_handler(event, context):
 
-    # get email from payload
-    email = 'tsergium@gmail.com';
-
-    client_certificate_subject_line = 'subject=/emailAddress=%s' % (email);
+    client_certificate_subject_prefix = 'subject=/emailAddress=';
 
     # TODO: random_suffix = generate_random_suffix()
     random_suffix = '5'
@@ -29,7 +26,7 @@ def lambda_handler(event, context):
     cli_output = exec_and_return_array('openssl pkcs7 -in %s -inform DER -print_certs' % (signature_decoded_path))
 
     # Parse client and issuer certificates
-    client_certificate_array = find_certificate_with_subject_line(cli_output, client_certificate_subject_line)
+    client_certificate_array = find_certificate_with_subject_line(cli_output, client_certificate_subject_prefix)
 
     issuer_string = find_issuer_in_certificate(client_certificate_array)
     issuer_certificate_subject = issuer_string.replace('issuer=', 'subject=')
@@ -82,19 +79,23 @@ def write_to_file(path, data):
     file.write(data)
     file.close()
 
-def find_certificate_with_subject_line(cli_output, certificate_subject_line):
+def find_certificate_with_subject_line(cli_output, certificate_subject_line_prefix):
 
     # Find certificate subject line    
-    try:
-        start_index = cli_output.index(certificate_subject_line)
-    except ValueError:
-        print('Failed to find certificate in signature.')
-        raise
+    start_index = -1
+
+    for index, line in enumerate(cli_output):
+        if line.startswith(certificate_subject_line_prefix):
+            start_index = index
+            break
+   
+    if start_index == -1:
+        raise ValueError('Failed to find certificate in signature.')
     
     # Cut everything before this point...
     sliced_list = cli_output[start_index:]
 
-    # ...so we can find the first relevant -----END CERTIFICATE---- string
+    # ...so we can find the first relevant END CERTIFICATE string
     end_index = sliced_list.index('-----END CERTIFICATE-----')
 
     certificate_array = sliced_list[:end_index+1]
