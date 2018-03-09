@@ -4,6 +4,12 @@ import os
 import random
 
 def lambda_handler(event, context):
+    '''
+    Expects a Base64 encoded S/MIME signature in text form inside the payload.
+    The signature is decoded and the X509 certificates inside are extracted.
+    An OCSP check is then performed on the signer's certificate.
+    All of this is done using OpenSSL calls on the shell. 
+    '''
 
     client_certificate_subject_prefix = 'subject=/emailAddress=';
 
