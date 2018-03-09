@@ -2,6 +2,7 @@
 import subprocess
 import os
 import random
+import re
 
 def lambda_handler(event, context):
     '''
@@ -11,10 +12,8 @@ def lambda_handler(event, context):
     All of this is done using OpenSSL calls on the shell. 
     '''
 
-    client_certificate_subject_prefix = 'subject=/emailAddress=';
-
     # TODO: random_suffix = generate_random_suffix()
-    random_suffix = '5'
+    random_suffix = '9'
 
     signature_raw_path = '/tmp/signature%s' % (random_suffix);
     signature_decoded_path = '/tmp/signatureDecoded%s' % (random_suffix);
@@ -32,11 +31,12 @@ def lambda_handler(event, context):
     cli_output = exec_and_return_array('openssl pkcs7 -in %s -inform DER -print_certs' % (signature_decoded_path))
 
     # Parse client and issuer certificates
-    client_certificate_array = find_certificate_with_subject_line(cli_output, client_certificate_subject_prefix)
+    client_certificate_subject_pattern = 'subject=.*/emailAddress=.+';
+    client_certificate_array = find_certificate_with_subject_line_pattern(cli_output, client_certificate_subject_pattern)
 
     issuer_string = find_issuer_in_certificate(client_certificate_array)
     issuer_certificate_subject = issuer_string.replace('issuer=', 'subject=')
-    issuer_certificate_array = find_certificate_with_subject_line(cli_output, issuer_certificate_subject)
+    issuer_certificate_array = find_certificate_with_subject_line_pattern(cli_output, issuer_certificate_subject)
 
     # Write certificates to disk
     write_to_file(client_certificate_path, '\n'.join(client_certificate_array))
@@ -85,21 +85,20 @@ def write_to_file(path, data):
     file.write(data)
     file.close()
 
-def find_certificate_with_subject_line(cli_output, certificate_subject_line_prefix):
+def find_certificate_with_subject_line_pattern(cli_output, pattern):
 
-    # Find certificate subject line    
-    start_index = -1
+    subject_line_index = -1
 
     for index, line in enumerate(cli_output):
-        if line.startswith(certificate_subject_line_prefix):
-            start_index = index
+        if re.search(pattern, line):
+            subject_line_index = index
             break
    
-    if start_index == -1:
+    if subject_line_index == -1:
         raise ValueError('Failed to find certificate in signature.')
     
     # Cut everything before this point...
-    sliced_list = cli_output[start_index:]
+    sliced_list = cli_output[subject_line_index:]
 
     # ...so we can find the first relevant END CERTIFICATE string
     end_index = sliced_list.index('-----END CERTIFICATE-----')
