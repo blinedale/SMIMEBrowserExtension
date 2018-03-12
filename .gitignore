@@ -4,3 +4,4 @@ dist/
 .idea/
 .eslintcache
 .vscode/
+config/config.json

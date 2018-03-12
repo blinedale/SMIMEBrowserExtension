@@ -16,7 +16,7 @@
   },
   "inboxSDK": {
     "API_VERSION": 2,
-    "API_KEY": "c2RrX1JvY2tldFNNSU1FXzRlYWMzM2FhNjU="
+    "API_KEY": "[ADD YOUR KEY HERE]"
   },
   "logger": {
     "debugMode": true,
@@ -24,7 +24,8 @@
   },
   "smimeVerification": {
     "requireRootCerts": true,
-    "requireRevocationCheck": true,
+    "requireRevocationCheck": false,
+    "ocspUrl": "[ADD YOUR URL HERE]",
     "certificates": {
       "filename": "IncludedCACertificateWithPEMReport.csv"
     }
