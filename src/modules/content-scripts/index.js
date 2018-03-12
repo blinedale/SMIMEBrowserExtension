@@ -10,7 +10,7 @@ const base64lib = Base64lib.Base64;
 const configService = new Config();
 const inboxSDKConfig = configService.get('inboxSDK');
 const tooltipConfig = configService.get('tooltipster');
-const loggerConfig = configService.get('application').logger;
+const loggerConfig = configService.get('logger');
 
 const loggerService = new Logger(loggerConfig);
 const tooltipService = new TooltipService(tooltipConfig);

@@ -4,7 +4,11 @@ import {smimeVerificationService, dbHandler} from '../modules/background';
 chrome.runtime.onMessage.addListener(
   (request, sender, sendResponse) => {
     if (request.method === messagingMethods.verifyMessageSignature) {
-      smimeVerificationService.verifyMessageSignature(request.rawMessage, request.mailId).then(result => sendResponse(result));
+      try {
+        smimeVerificationService.verifyMessageSignature(request.rawMessage, request.mailId).then(result => sendResponse(result));
+      } catch (e) {
+        sendResponse(null);
+      }
 
       return true; // Will make sure sendResponse is called async
     }

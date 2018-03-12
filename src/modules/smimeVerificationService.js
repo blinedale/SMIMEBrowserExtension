@@ -10,16 +10,22 @@ import smimeVerificationResultCodes from '../constants/smimeVerificationResultCo
 class SmimeVerificationService {
   /**
    * @param {Logger} loggerService
-   * @param {boolean} requireRootCerts
+   * @param {Object} config
+   * @param {CertificateProvider} certificateProvider
+   * @param {RevocationCheckProvider} revocationCheckProvider
    */
-  constructor(loggerService, requireRootCerts = true) {
+  constructor(loggerService, config, certificateProvider, revocationCheckProvider) {
     this.trustedRootCerts = [];
     this.logger = loggerService;
-    this.requireRootCerts = requireRootCerts;
-  }
+    this.revocationCheckProvider = revocationCheckProvider;
 
-  setTrustedRoots(trustedRoots) {
-    this.trustedRootCerts = trustedRoots;
+    this.requireRootCerts = config.requireRootCerts;
+    this.requireRevocationCheck = config.requireRevocationCheck;
+
+    if (this.requireRootCerts) {
+      certificateProvider.getTrustedRootCertificates()
+      .then(trustedRoots => this.trustedRootCerts = trustedRoots);
+    }
   }
 
   /**
@@ -36,10 +42,9 @@ class SmimeVerificationService {
       const result = getResultPrototype();
 
       if (this.requireRootCerts && this.trustedRootCerts.length === 0) {
+        this.logger.err(`Verification is configured to check against root certificates, but we haven't parsed any. Exiting verification.`);
         return resolve(result); // Returning empty result if we do not have root certs.
       }
-
-      this.logger.log(`nr certs ${this.trustedRootCerts.length}`);
 
       result.mailId = mailId;
 
@@ -87,8 +92,14 @@ class SmimeVerificationService {
         return resolve(result);
       }
 
+      // OCSP check 
+      if (this.requireRevocationCheck) {
+        this.logger.log(`This is where we do the OCSP check.`);
+        const revocationCheckResult = this.revocationCheckProvider.checkRevocationForSignature();
+      }
+
       // Get content of email that was signed. Should be entire first child node.
-      const signedDataBuffer = stringToArrayBuffer(parser.nodes.node1.raw.replace(/\n/g, "\r\n"));
+      const signedDataBuffer = stringToArrayBuffer(parser.nodes.node1.raw.replace(/\n/g, `\r\n`));
 
       let verificationOptions = {
         signer: 0, // index to use in array in cmsSignedSimpl.signerInfos - this is always 0

@@ -7,23 +7,20 @@ import CertificateProvider from '../certificateProvider';
 import CertificateParser from '../certificateParser';
 
 const base64lib = Base64lib.Base64;
+
 const configService = new Config();
 const dbConfig = configService.get('db');
-const applicationConfig = configService.get('application');
-const loggerConfig = applicationConfig.logger;
+const loggerConfig = configService.get('logger');
+const smimeVerificationConfig = configService.get('smimeVerification');
 
 const loggerService = new Logger(loggerConfig);
 const dbHandler = new DbHandler(dbConfig, loggerService, base64lib);
 
 const certificateParser = new CertificateParser(base64lib);
-
-const certificateConfig = applicationConfig.certificates;
+const certificateConfig = smimeVerificationConfig.certificates;
 const certificateProvider = new CertificateProvider(certificateConfig, certificateParser, loggerService);
 
-const smimeVerificationService = new SmimeVerificationService(loggerService);
-
-certificateProvider.getTrustedRootCertificates()
-.then(trustedRoots => smimeVerificationService.setTrustedRoots(trustedRoots));
+const smimeVerificationService = new SmimeVerificationService(loggerService, smimeVerificationConfig, certificateProvider);
 
 export {
   smimeVerificationService,
