@@ -17,7 +17,7 @@ const smimeVerificationConfig = configService.get('smimeVerification');
 const loggerService = new Logger(loggerConfig);
 const dbHandler = new DbHandler(dbConfig, loggerService, base64lib);
 
-const revocationCheckProvider = new RevocationCheckProvider(loggerService, base64lib);
+const revocationCheckProvider = new RevocationCheckProvider(smimeVerificationConfig, loggerService, base64lib);
 const certificateParser = new CertificateParser(base64lib);
 const certificateConfig = smimeVerificationConfig.certificates;
 const certificateProvider = new CertificateProvider(certificateConfig, certificateParser, loggerService);

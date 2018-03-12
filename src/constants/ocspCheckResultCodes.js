@@ -1,7 +1,7 @@
 const ocspCheckResultCodes = {
-  GOOD: "GOOD",
-  REVOKED: "REVOKED",
-  UNAUTHORIZED: "UNAUTHORIZED",
+  GOOD: "good",
+  REVOKED: "revoked",
+  UNAUTHORIZED: "unauthorized",
 };
 
 export default ocspCheckResultCodes;

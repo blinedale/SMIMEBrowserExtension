@@ -19,8 +19,7 @@ So far, the only difference between the local dev and prod versions is that the 
 
 - Clone the repo.
 - Copy ```config/config.json.dist``` to ```config/config.json``` and add your own API key for InboxSDK.
-- If you wish to perform revocation checks through OCSP, set ```requireRevocationCheck``` to ```true``` and add the URL where your Python backend is running (see separate section). This URL must also be added to the ```permissions``` array in ```chrome/manifest.json```. 
-- If you do not wish to perform revocation checks, leave ```requireRevocationCheck``` on ```false```.
+- For now, let's assume you do not want to perform revocation checks via a backend script, so let's leave ```requireRevocationCheck``` on ```false```. More details on this later.
 - Run ```yarn && grunt```.
 - Go to chrome://extensions and activate developer mode.
 - Click "Load unpacked" and pick the build/chrome folder of this project to load the extension. 

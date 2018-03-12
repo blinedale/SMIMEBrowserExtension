@@ -6,7 +6,8 @@ class RevocationCheckProvider {
    * @param {Logger} loggerService 
    * @param {Object} base64lib 
    */
-  constructor(loggerService, base64lib) {
+  constructor(config, loggerService, base64lib) {
+    this.ocspUrl = config.ocspUrl;
     this.logger = loggerService;
     this.base64lib = base64lib;
   }
@@ -22,9 +23,22 @@ class RevocationCheckProvider {
     const sigBase64 = this.base64lib.btoa(sigString);
     this.logger.log(sigBase64);
 
-    const result = ocspCheckResultCodes.GOOD;
+    // const result = ocspCheckResultCodes.GOOD;
 
-    return this.processResult(result);
+    const xhr = new XMLHttpRequest();
+    // xhr.overrideMimeType('text/plain'); // Needed for Firefox, otherwise it tries to parse the response as XML.
+    xhr.open('POST', this.ocspUrl, false); // Need to call synchronously or it's too slow
+    xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+
+    xhr.send(JSON.stringify({signature: sigBase64}));
+    const resultObj = JSON.parse(xhr.responseText);
+
+    this.logger.log('Performed OCSP');
+    this.logger.log(resultObj);
+
+    // example result {client_certificate_serial_number: "C0B312847198DD6BDF577BB6520C1024", ocsp_result: "unauthorized"}
+
+    return this.processResult(resultObj);
   }
 
   processResult(result) {

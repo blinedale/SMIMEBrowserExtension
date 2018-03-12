@@ -82,6 +82,9 @@ class SmimeVerificationService {
 
       this.logger.log(`Dumping certificates.`);
       this.logger.log(cmsSignedSimpl);
+      this.logger.log(`Dumping hex of serial.`);
+      const hexSerial = this.buf2hex(cmsSignedSimpl.certificates[0].serialNumber.valueBlock._valueHex);
+      this.logger.log(hexSerial);
 
       /* We have to check for expiration here since we cannot do OCSP on expired certs.
          Ergo, if it's expired, it's impossible to know if the cert is revoked or not.
@@ -92,7 +95,7 @@ class SmimeVerificationService {
         return resolve(result);
       }
 
-      // OCSP check - throws exception if check itself does not return valid result
+      // OCSP check - throws exception if the check itself does not return valid result
       if (this.requireRevocationCheck && this.revocationCheckProvider.isCertificateRevoked(signatureNode)) {
         this.logger.log(`Certificate revoked!`);
         result.code = smimeVerificationResultCodes.FRAUD_WARNING;
@@ -151,6 +154,15 @@ class SmimeVerificationService {
       }
       );
     });
+  }
+
+  /**
+   * @param {ArrayBuffer} buffer 
+   */
+  buf2hex(buffer) { // buffer is an ArrayBuffer
+    const str = Array.prototype.map.call(new Uint8Array(buffer), x => (`00${x.toString(16)}`).slice(-2)).join('');
+    // TODO: trim leading zeroes
+    return str;
   }
 
   /**
