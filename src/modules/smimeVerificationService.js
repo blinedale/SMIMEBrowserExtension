@@ -34,7 +34,7 @@ class SmimeVerificationService {
    * a conclusive result - in this case we should not persist the result.
    * The returned result object's message is meant to be displayed to the user and should not be too technical.
    * @param rawMessage Full MIME message. Preferably in binary form as this reduces the risk of encoding issues.
-   * @param {String} mailId String of mail id.
+   * @param {string} mailId String of mail id.
    * @returns {Promise}
    */
   verifyMessageSignature(rawMessage, mailId) {
@@ -92,10 +92,12 @@ class SmimeVerificationService {
         return resolve(result);
       }
 
-      // OCSP check 
-      if (this.requireRevocationCheck) {
-        this.logger.log(`This is where we do the OCSP check.`);
-        const revocationCheckResult = this.revocationCheckProvider.checkRevocationForSignature();
+      // OCSP check - throws exception if check itself does not return valid result
+      if (this.requireRevocationCheck && this.revocationCheckProvider.isCertificateRevoked(signatureNode)) {
+        this.logger.log(`Certificate revoked!`);
+        result.code = smimeVerificationResultCodes.FRAUD_WARNING;
+        result.message = `The sender's certificate has been revoked. Be wary of message content.`;
+        return resolve(result);
       }
 
       // Get content of email that was signed. Should be entire first child node.
@@ -154,7 +156,7 @@ class SmimeVerificationService {
   /**
    * Get signer's email address from signature
    * @param {SignedData} signedData
-   * @returns {String}
+   * @returns {string}
    */
   fetchSignerEmail(signedData) {
     let signerEmail = null;
@@ -172,7 +174,7 @@ class SmimeVerificationService {
   /**
    * Checks if any of the included certificates expired/not valid yet.
    * @param {SignedData} signedData
-   * @returns {Boolean}
+   * @returns {boolean}
    */
   isAnyCertificateExpired(signedData) {
     const marginMilliseconds = smimeSpecificationConstants.expirationDateMarginHours * 60 * 60 * 1000;
@@ -226,7 +228,7 @@ class SmimeVerificationService {
   getAsn1TypeFromBuffer(signatureBuffer) {
     const asn1 = asn1js.fromBER(signatureBuffer);
     if (asn1.offset === -1) {
-      throw new TypeError('Could not parse signature.');
+      throw new TypeError(`Could not parse signature.`);
     }
     return asn1;
   }
@@ -238,7 +240,7 @@ class SmimeVerificationService {
 
   isVerificationFailed(verificationResult) {
     let failed = false;
-    if (typeof verificationResult !== "undefined") {
+    if (typeof verificationResult !== `undefined`) {
       if (verificationResult === false) {
         failed = true;
       }
