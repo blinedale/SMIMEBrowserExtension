@@ -13,32 +13,34 @@ class RevocationCheckProvider {
   }
 
   /**
+   * Resolves to a boolean - true if the certificate is revoked, false if the certificate is not revoked.
+   * Throws an exception if we cannot get a clear result. 
+   * 
+   * Example response from the included OCSP server code:
+   * {
+   *   client_certificate_serial_number: "[32 char hex value]", 
+   *   ocsp_result: "unauthorized/good/revoked"
+   * }
    * @param {MimeNode} signatureNode 
+   * @returns {Promise}
    */
   isCertificateRevoked(signatureNode) {
     this.logger.log('This is where we do the OCSP check');
-    // this.logger.log(signatureNode);
     const sigString = String.fromCharCode.apply(null, signatureNode.content);
-    // this.logger.log(sigString);
     const sigBase64 = this.base64lib.btoa(sigString);
-    this.logger.log(sigBase64);
 
-    // const result = ocspCheckResultCodes.GOOD;
+    const data = new FormData();
+    data.append(`json`, JSON.stringify({signature: sigBase64}));
+    const params = {method: `POST`, body: data};
 
-    const xhr = new XMLHttpRequest();
-    // xhr.overrideMimeType('text/plain'); // Needed for Firefox, otherwise it tries to parse the response as XML.
-    xhr.open('POST', this.ocspUrl, false); // Need to call synchronously or it's too slow
-    xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-
-    xhr.send(JSON.stringify({signature: sigBase64}));
-    const resultObj = JSON.parse(xhr.responseText);
-
-    this.logger.log('Performed OCSP');
-    this.logger.log(resultObj);
-
-    // example result {client_certificate_serial_number: "C0B312847198DD6BDF577BB6520C1024", ocsp_result: "unauthorized"}
-
-    return this.processResult(resultObj);
+    return fetch(this.ocspUrl, params)
+    .then(res => res.json())
+    .then(resultObj => this.processResult(resultObj.ocsp_result));
+    // .then(resultObj => {
+    //   this.logger.log(`Performed OCSP, returning hardcoded 'revoked'`);
+    //   this.logger.log(resultObj);
+    //   return this.processResult('revoked');
+    // });
   }
 
   processResult(result) {

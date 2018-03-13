@@ -62,7 +62,6 @@ class SmimeVerificationService {
       }
 
       let cmsSignedSimpl = null;
-      let signerEmail = '';
 
       try {
         // Get signature buffer
@@ -72,7 +71,7 @@ class SmimeVerificationService {
 
         cmsSignedSimpl = this.getSignedDataFromAsn1(asn1);
 
-        signerEmail = this.fetchSignerEmail(cmsSignedSimpl);
+        result.signer = this.fetchSignerEmail(cmsSignedSimpl);
       }
       catch (ex) {
         result.code = smimeVerificationResultCodes.FRAUD_WARNING;
@@ -95,74 +94,86 @@ class SmimeVerificationService {
         return resolve(result);
       }
 
-      // OCSP check - throws exception if the check itself does not return valid result
-      if (this.requireRevocationCheck && this.revocationCheckProvider.isCertificateRevoked(signatureNode)) {
-        this.logger.log(`Certificate revoked!`);
-        result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-        result.message = `The sender's certificate has been revoked. Be wary of message content.`;
-        return resolve(result);
+      if (this.requireRevocationCheck) {
+        // OCSP check - throws exception if the check itself does not return valid result
+        this.revocationCheckProvider.isCertificateRevoked(signatureNode)
+        .then(isRevoked => {
+          if (isRevoked) {
+            this.logger.log(`Certificate revoked!`);
+            result.code = smimeVerificationResultCodes.FRAUD_WARNING;
+            result.message = `The signature's certificate has been revoked. Be wary of message content.`;
+            return resolve(result);
+          }
+          this.logger.log(`Certificate revoked is not revoked!`);
+          return this.doVerification(parser, cmsSignedSimpl, result, resolve);
+        });
+      } else {
+        return this.doVerification(parser, cmsSignedSimpl, result, resolve);
       }
+    });
+  }
 
-      // Get content of email that was signed. Should be entire first child node.
-      const signedDataBuffer = stringToArrayBuffer(parser.nodes.node1.raw.replace(/\n/g, `\r\n`));
+  /**
+   * @param {MimeParser} parser 
+   * @param {SignedData} cmsSignedSimpl 
+   * @param {Object} result 
+   * @returns {Promise}
+   */
+  doVerification(parser, cmsSignedSimpl, result, resolve) {
+    // Get content of email that was signed. Should be entire first child node.
+    const signedDataBuffer = stringToArrayBuffer(parser.nodes.node1.raw.replace(/\n/g, `\r\n`));
 
-      let verificationOptions = {
-        signer: 0, // index to use in array in cmsSignedSimpl.signerInfos - this is always 0
-        data: signedDataBuffer,
-        checkChain: true,
-        extendedMode: true,
-        trustedCerts: this.trustedRootCerts
+    let verificationOptions = {
+      signer: 0, // index to use in array in cmsSignedSimpl.signerInfos - this is always 0
+      data: signedDataBuffer,
+      checkChain: true,
+      extendedMode: true,
+      trustedCerts: this.trustedRootCerts
+    };
+
+    if (!this.requireRootCerts) {
+      verificationOptions = {
+        signer: 0,
+        data: signedDataBuffer
       };
+    }
 
-      if (!this.requireRootCerts) {
-        verificationOptions = {
-          signer: 0,
-          data: signedDataBuffer
-        };
-      }
-
-      // Verify the signed data
-      cmsSignedSimpl.verify(verificationOptions).then(verificationResult => {
-        result.signer = signerEmail;
-
-        if (this.isVerificationFailed(verificationResult)) {
-          result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-          result.message = `Signature verification failed. Message content may be fraudulent.`;
-          return resolve(result);
-        }
-
-        if (!this.isFromAddressCorrect(parser, signerEmail)) {
-          result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-          result.message = `The "From" email address does not match the signature's email address.`;
-          return resolve(result);
-        }
-
-        result.code = smimeVerificationResultCodes.VERIFICATION_OK;
-        result.message = `Message signature is valid for the sender.`;
-        return resolve(result);
-      }).catch(error => {
-        if (error.message.indexOf('No valid certificate paths found') !== -1) {
-          // This happens when we could not find the corresponding root CA in this.trustedRootCerts
-          result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-          result.message = `Could not verify the signature's certificate origin.`;
-          return resolve(result);
-        }
-
-        result.code = smimeVerificationResultCodes.CANNOT_VERIFY;
-        result.message = `Message cannot be verified. Unknown error.`;
+    // Verify the signed data
+    cmsSignedSimpl.verify(verificationOptions).then(verificationResult => {
+      if (this.isVerificationFailed(verificationResult)) {
+        result.code = smimeVerificationResultCodes.FRAUD_WARNING;
+        result.message = `Signature verification failed. Message content may be fraudulent.`;
         return resolve(result);
       }
-      );
+
+      if (!this.isFromAddressCorrect(parser, result.signer)) {
+        result.code = smimeVerificationResultCodes.FRAUD_WARNING;
+        result.message = `The "From" email address does not match the signature's email address.`;
+        return resolve(result);
+      }
+
+      result.code = smimeVerificationResultCodes.VERIFICATION_OK;
+      result.message = `Message signature is valid for the sender.`;
+      return resolve(result);
+    }).catch(error => {
+      if (error.message.indexOf('No valid certificate paths found') !== -1) {
+        // This happens when we could not find the corresponding root CA in this.trustedRootCerts
+        result.code = smimeVerificationResultCodes.FRAUD_WARNING;
+        result.message = `Could not verify the signature's certificate origin.`;
+        return resolve(result);
+      }
+
+      result.code = smimeVerificationResultCodes.CANNOT_VERIFY;
+      result.message = `Message cannot be verified. Unknown error.`;
+      return resolve(result);
     });
   }
 
   /**
    * @param {ArrayBuffer} buffer 
    */
-  buf2hex(buffer) { // buffer is an ArrayBuffer
-    const str = Array.prototype.map.call(new Uint8Array(buffer), x => (`00${x.toString(16)}`).slice(-2)).join('');
-    // TODO: trim leading zeroes
-    return str;
+  buf2hex(buffer) {
+    return Array.prototype.map.call(new Uint8Array(buffer), x => (`00${x.toString(16)}`).slice(-2)).join('');
   }
 
   /**
