@@ -42,8 +42,7 @@ class SmimeVerificationService {
       const result = getResultPrototype();
 
       if (this.requireRootCerts && this.trustedRootCerts.length === 0) {
-        this.logger.err(`Verification is configured to check against root certificates, but we haven't parsed any. Exiting verification.`);
-        return resolve(result); // Returning empty result if we do not have root certs.
+        throw new Error(`Verification is configured to check against root certificates, but we haven't parsed any. Exiting verification.`);
       }
 
       result.mailId = mailId;

@@ -36,11 +36,6 @@ class RevocationCheckProvider {
     return fetch(this.ocspUrl, params)
     .then(res => res.json())
     .then(resultObj => this.processResult(resultObj.ocsp_result));
-    // .then(resultObj => {
-    //   this.logger.log(`Performed OCSP, returning hardcoded 'revoked'`);
-    //   this.logger.log(resultObj);
-    //   return this.processResult('revoked');
-    // });
   }
 
   processResult(result) {

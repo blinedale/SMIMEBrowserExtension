@@ -23,7 +23,7 @@ class SmimeMessageHandler {
 
   verifyAndMark(rawMessage, mailId, domMessage) {
     try {
-      //send to background and process response
+      // Send to background script and process response
       chrome.runtime.sendMessage({method: messagingMethods.verifyMessageSignature, rawMessage, mailId}, result => {
         if (!result || !result.mailId) {
           throw `Verification error - cannot proceed with mail id ${mailId}.`;
