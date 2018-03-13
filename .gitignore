@@ -5,3 +5,4 @@ dist/
 .eslintcache
 .vscode/
 config/config.json
+src/chrome/manifest.json

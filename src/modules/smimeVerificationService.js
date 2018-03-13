@@ -113,6 +113,7 @@ class SmimeVerificationService {
   }
 
   /**
+   * Performs the actual cryptographic verification plus additional sanity checks.
    * @param {MimeParser} parser 
    * @param {SignedData} cmsSignedSimpl 
    * @param {Object} result 
