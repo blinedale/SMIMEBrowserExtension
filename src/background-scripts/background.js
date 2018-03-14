@@ -1,5 +1,5 @@
 import messagingMethods from '../constants/messagingMethods';
-import {smimeVerificationService, dbHandler} from '../modules/background';
+import {smimeVerificationService, dbHandler, loggerService} from '../modules/background';
 
 chrome.runtime.onMessage.addListener(
   (request, sender, sendResponse) => {
@@ -7,6 +7,7 @@ chrome.runtime.onMessage.addListener(
       try {
         smimeVerificationService.verifyMessageSignature(request.rawMessage, request.mailId).then(result => sendResponse(result));
       } catch (e) {
+        loggerService.err(e);
         sendResponse(null);
       }
 
