@@ -103,7 +103,7 @@ class SmimeVerificationService {
             result.message = `The signature's certificate has been revoked. Be wary of message content.`;
             return resolve(result);
           }
-          this.logger.log(`Certificate revoked is not revoked!`);
+          this.logger.log(`Certificate is not revoked!`);
           return this.doVerification(parser, cmsSignedSimpl, result, resolve);
         });
       } else {
