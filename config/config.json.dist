@@ -1,4 +1,5 @@
 {
+  "language": "en",
   "db": {
     "dbName": "RocketSMIMEBrowserExtensionDatabase",
     "dbVersion": 1,
@@ -12,7 +13,8 @@
     "animation": "fade",
     "themeSuccess": "tooltipster-punk",
     "themeError": "tooltipster-noir",
-    "trigger": "hover"
+    "trigger": "hover",
+    "maxWidth": 400
   },
   "inboxSDK": {
     "API_VERSION": 2,
