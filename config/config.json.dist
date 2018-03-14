@@ -16,13 +16,16 @@
   },
   "inboxSDK": {
     "API_VERSION": 2,
-    "API_KEY": "c2RrX1JvY2tldFNNSU1FXzRlYWMzM2FhNjU="
+    "API_KEY": "[ADD YOUR KEY HERE]"
   },
-  "application": {
-    "logger": {
-      "debugMode": true,
-      "prefix": "Rocket S/MIME Browser Extension: "
-    },
+  "logger": {
+    "debugMode": true,
+    "prefix": "Rocket S/MIME Browser Extension: "
+  },
+  "smimeVerification": {
+    "requireRootCerts": true,
+    "requireRevocationCheck": false,
+    "ocspUrl": "[ADD YOUR URL HERE]",
     "certificates": {
       "filename": "IncludedCACertificateWithPEMReport.csv"
     }

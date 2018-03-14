@@ -18,8 +18,9 @@ describe('SmimeVerificationService', () => {
   /* TODO: All included test data was made with certificates that expire in September 2018. */
 
   const mockLogger = new MockLogger();
+  const config = {requireRootCerts: false, requireRevocationCheck: false};
 
-  const smimeVerificationService = new SmimeVerificationService(mockLogger, false);
+  const smimeVerificationService = new SmimeVerificationService(mockLogger, config, null, null);
   const isValidSmimeEmailSpy = sinon.spy(smimeVerificationService, 'isValidSmimeEmail');
   const isRootNodeContentTypeValueCorrectSpy = sinon.spy(smimeVerificationService, 'isRootNodeContentTypeValueCorrect');
   const isRootNodeContentTypeProtocolCorrectSpy = sinon.spy(smimeVerificationService, 'isRootNodeContentTypeProtocolCorrect');

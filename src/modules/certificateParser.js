@@ -8,7 +8,7 @@ class CertificateParser {
   }
 
   /**
-   * @param {String} rawPEMtext
+   * @param {string} rawPEMtext
    * @returns {Certificate}
    */
   parseCertificate(rawPEMtext) {

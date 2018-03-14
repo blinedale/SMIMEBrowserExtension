@@ -10,16 +10,22 @@ import smimeVerificationResultCodes from '../constants/smimeVerificationResultCo
 class SmimeVerificationService {
   /**
    * @param {Logger} loggerService
-   * @param {boolean} requireRootCerts
+   * @param {Object} config
+   * @param {CertificateProvider} certificateProvider
+   * @param {RevocationCheckProvider} revocationCheckProvider
    */
-  constructor(loggerService, requireRootCerts = true) {
+  constructor(loggerService, config, certificateProvider, revocationCheckProvider) {
     this.trustedRootCerts = [];
     this.logger = loggerService;
-    this.requireRootCerts = requireRootCerts;
-  }
+    this.revocationCheckProvider = revocationCheckProvider;
 
-  setTrustedRoots(trustedRoots) {
-    this.trustedRootCerts = trustedRoots;
+    this.requireRootCerts = config.requireRootCerts;
+    this.requireRevocationCheck = config.requireRevocationCheck;
+
+    if (this.requireRootCerts) {
+      certificateProvider.getTrustedRootCertificates()
+      .then(trustedRoots => this.trustedRootCerts = trustedRoots);
+    }
   }
 
   /**
@@ -28,7 +34,7 @@ class SmimeVerificationService {
    * a conclusive result - in this case we should not persist the result.
    * The returned result object's message is meant to be displayed to the user and should not be too technical.
    * @param rawMessage Full MIME message. Preferably in binary form as this reduces the risk of encoding issues.
-   * @param {String} mailId String of mail id.
+   * @param {string} mailId String of mail id.
    * @returns {Promise}
    */
   verifyMessageSignature(rawMessage, mailId) {
@@ -36,10 +42,8 @@ class SmimeVerificationService {
       const result = getResultPrototype();
 
       if (this.requireRootCerts && this.trustedRootCerts.length === 0) {
-        return resolve(result); // Returning empty result if we do not have root certs.
+        throw new Error(`Verification is configured to check against root certificates, but we haven't parsed any. Exiting verification.`);
       }
-
-      this.logger.log(`nr certs ${this.trustedRootCerts.length}`);
 
       result.mailId = mailId;
 
@@ -57,7 +61,6 @@ class SmimeVerificationService {
       }
 
       let cmsSignedSimpl = null;
-      let signerEmail = '';
 
       try {
         // Get signature buffer
@@ -67,7 +70,7 @@ class SmimeVerificationService {
 
         cmsSignedSimpl = this.getSignedDataFromAsn1(asn1);
 
-        signerEmail = this.fetchSignerEmail(cmsSignedSimpl);
+        result.signer = this.fetchSignerEmail(cmsSignedSimpl);
       }
       catch (ex) {
         result.code = smimeVerificationResultCodes.FRAUD_WARNING;
@@ -77,6 +80,9 @@ class SmimeVerificationService {
 
       this.logger.log(`Dumping certificates.`);
       this.logger.log(cmsSignedSimpl);
+      this.logger.log(`Dumping hex of serial.`);
+      const hexSerial = this.buf2hex(cmsSignedSimpl.certificates[0].serialNumber.valueBlock._valueHex);
+      this.logger.log(hexSerial);
 
       /* We have to check for expiration here since we cannot do OCSP on expired certs.
          Ergo, if it's expired, it's impossible to know if the cert is revoked or not.
@@ -87,63 +93,93 @@ class SmimeVerificationService {
         return resolve(result);
       }
 
-      // Get content of email that was signed. Should be entire first child node.
-      const signedDataBuffer = stringToArrayBuffer(parser.nodes.node1.raw.replace(/\n/g, "\r\n"));
-
-      let verificationOptions = {
-        signer: 0, // index to use in array in cmsSignedSimpl.signerInfos - this is always 0
-        data: signedDataBuffer,
-        checkChain: true,
-        extendedMode: true,
-        trustedCerts: this.trustedRootCerts
-      };
-
-      if (!this.requireRootCerts) {
-        verificationOptions = {
-          signer: 0,
-          data: signedDataBuffer
-        };
+      if (this.requireRevocationCheck) {
+        // OCSP check - throws exception if the check itself does not return valid result
+        this.revocationCheckProvider.isCertificateRevoked(signatureNode)
+        .then(isRevoked => {
+          if (isRevoked) {
+            this.logger.log(`Certificate revoked!`);
+            result.code = smimeVerificationResultCodes.FRAUD_WARNING;
+            result.message = `The signature's certificate has been revoked. Be wary of message content.`;
+            return resolve(result);
+          }
+          this.logger.log(`Certificate revoked is not revoked!`);
+          return this.doVerification(parser, cmsSignedSimpl, result, resolve);
+        });
+      } else {
+        return this.doVerification(parser, cmsSignedSimpl, result, resolve);
       }
-
-      // Verify the signed data
-      cmsSignedSimpl.verify(verificationOptions).then(verificationResult => {
-        result.signer = signerEmail;
-
-        if (this.isVerificationFailed(verificationResult)) {
-          result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-          result.message = `Signature verification failed. Message content may be fraudulent.`;
-          return resolve(result);
-        }
-
-        if (!this.isFromAddressCorrect(parser, signerEmail)) {
-          result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-          result.message = `The "From" email address does not match the signature's email address.`;
-          return resolve(result);
-        }
-
-        result.code = smimeVerificationResultCodes.VERIFICATION_OK;
-        result.message = `Message signature is valid for the sender.`;
-        return resolve(result);
-      }).catch(error => {
-        if (error.message.indexOf('No valid certificate paths found') !== -1) {
-          // This happens when we could not find the corresponding root CA in this.trustedRootCerts
-          result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-          result.message = `Could not verify the signature's certificate origin.`;
-          return resolve(result);
-        }
-
-        result.code = smimeVerificationResultCodes.CANNOT_VERIFY;
-        result.message = `Message cannot be verified. Unknown error.`;
-        return resolve(result);
-      }
-      );
     });
+  }
+
+  /**
+   * Performs the actual cryptographic verification plus additional sanity checks.
+   * @param {MimeParser} parser 
+   * @param {SignedData} cmsSignedSimpl 
+   * @param {Object} result 
+   * @returns {Promise}
+   */
+  doVerification(parser, cmsSignedSimpl, result, resolve) {
+    // Get content of email that was signed. Should be entire first child node.
+    const signedDataBuffer = stringToArrayBuffer(parser.nodes.node1.raw.replace(/\n/g, `\r\n`));
+
+    let verificationOptions = {
+      signer: 0, // index to use in array in cmsSignedSimpl.signerInfos - this is always 0
+      data: signedDataBuffer,
+      checkChain: true,
+      extendedMode: true,
+      trustedCerts: this.trustedRootCerts
+    };
+
+    if (!this.requireRootCerts) {
+      verificationOptions = {
+        signer: 0,
+        data: signedDataBuffer
+      };
+    }
+
+    // Verify the signed data
+    cmsSignedSimpl.verify(verificationOptions).then(verificationResult => {
+      if (this.isVerificationFailed(verificationResult)) {
+        result.code = smimeVerificationResultCodes.FRAUD_WARNING;
+        result.message = `Signature verification failed. Message content may be fraudulent.`;
+        return resolve(result);
+      }
+
+      if (!this.isFromAddressCorrect(parser, result.signer)) {
+        result.code = smimeVerificationResultCodes.FRAUD_WARNING;
+        result.message = `The "From" email address does not match the signature's email address.`;
+        return resolve(result);
+      }
+
+      result.code = smimeVerificationResultCodes.VERIFICATION_OK;
+      result.message = `Message signature is valid for the sender.`;
+      return resolve(result);
+    }).catch(error => {
+      if (error.message.indexOf('No valid certificate paths found') !== -1) {
+        // This happens when we could not find the corresponding root CA in this.trustedRootCerts
+        result.code = smimeVerificationResultCodes.FRAUD_WARNING;
+        result.message = `Could not verify the signature's certificate origin.`;
+        return resolve(result);
+      }
+
+      result.code = smimeVerificationResultCodes.CANNOT_VERIFY;
+      result.message = `Message cannot be verified. Unknown error.`;
+      return resolve(result);
+    });
+  }
+
+  /**
+   * @param {ArrayBuffer} buffer 
+   */
+  buf2hex(buffer) {
+    return Array.prototype.map.call(new Uint8Array(buffer), x => (`00${x.toString(16)}`).slice(-2)).join('');
   }
 
   /**
    * Get signer's email address from signature
    * @param {SignedData} signedData
-   * @returns {String}
+   * @returns {string}
    */
   fetchSignerEmail(signedData) {
     let signerEmail = null;
@@ -161,7 +197,7 @@ class SmimeVerificationService {
   /**
    * Checks if any of the included certificates expired/not valid yet.
    * @param {SignedData} signedData
-   * @returns {Boolean}
+   * @returns {boolean}
    */
   isAnyCertificateExpired(signedData) {
     const marginMilliseconds = smimeSpecificationConstants.expirationDateMarginHours * 60 * 60 * 1000;
@@ -215,7 +251,7 @@ class SmimeVerificationService {
   getAsn1TypeFromBuffer(signatureBuffer) {
     const asn1 = asn1js.fromBER(signatureBuffer);
     if (asn1.offset === -1) {
-      throw new TypeError('Could not parse signature.');
+      throw new TypeError(`Could not parse signature.`);
     }
     return asn1;
   }
@@ -227,7 +263,7 @@ class SmimeVerificationService {
 
   isVerificationFailed(verificationResult) {
     let failed = false;
-    if (typeof verificationResult !== "undefined") {
+    if (typeof verificationResult !== `undefined`) {
       if (verificationResult === false) {
         failed = true;
       }

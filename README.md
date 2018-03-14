@@ -15,7 +15,15 @@ Currently supporting the desktop versions of Gmail and Google Inbox in Chrome.
 
 So far, the only difference between the local dev and prod versions is that the prod version has logging turned off.
 
-Install your local dev version in Chrome as per usual by going to chrome://extensions and activating developer mode. Then click "Load unpacked extension" and pick the build/chrome folder of this project.
+## Getting started
+
+- Clone the repo.
+- Copy ```config/config.json.dist``` to ```config/config.json``` and add your own API key for InboxSDK.
+- For now, let's assume you do not want to perform revocation checks via a backend script, so let's leave ```requireRevocationCheck``` on ```false```. More details on this later.
+- Copy ```src/chrome/manifest.json.dist``` to ```src/chrome/manifest.json```.
+- Run ```yarn && grunt```.
+- Go to chrome://extensions and activate developer mode.
+- Click "Load unpacked" and pick the build/chrome folder of this project to load the extension. 
 
 ## How it works
 
