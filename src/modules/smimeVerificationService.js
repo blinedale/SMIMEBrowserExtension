@@ -6,6 +6,7 @@ import {SignedData, ContentInfo} from 'pkijs';
 import getResultPrototype from './resultPrototype';
 import smimeSpecificationConstants from '../constants/smimeSpecificationConstants';
 import smimeVerificationResultCodes from '../constants/smimeVerificationResultCodes';
+import buf2hex from './buf2hex';
 
 class SmimeVerificationService {
   /**
@@ -61,6 +62,8 @@ class SmimeVerificationService {
       }
 
       let cmsSignedSimpl = null;
+      let signerIndex = null;
+      let signerEmail = null;
 
       try {
         // Get signature buffer
@@ -70,7 +73,7 @@ class SmimeVerificationService {
 
         cmsSignedSimpl = this.getSignedDataFromAsn1(asn1);
 
-        result.signer = this.fetchSignerEmail(cmsSignedSimpl);
+        ({signerEmail, signerIndex} = this.fetchSignerEmailAndIndex(cmsSignedSimpl));
       }
       catch (ex) {
         result.code = smimeVerificationResultCodes.FRAUD_WARNING;
@@ -78,10 +81,12 @@ class SmimeVerificationService {
         return resolve(result);
       }
 
+      result.signer = signerEmail;
+
       this.logger.log(`Dumping certificates.`);
       this.logger.log(cmsSignedSimpl);
-      this.logger.log(`Dumping hex of serial.`);
-      const hexSerial = this.buf2hex(cmsSignedSimpl.certificates[0].serialNumber.valueBlock._valueHex);
+      this.logger.log(`Dumping hex of serial number of client cert.`);
+      const hexSerial = buf2hex(cmsSignedSimpl.certificates[signerIndex].serialNumber.valueBlock._valueHex);
       this.logger.log(hexSerial);
 
       /* We have to check for expiration here since we cannot do OCSP on expired certs.
@@ -168,28 +173,23 @@ class SmimeVerificationService {
   }
 
   /**
-   * @param {ArrayBuffer} buffer 
-   */
-  buf2hex(buffer) {
-    return Array.prototype.map.call(new Uint8Array(buffer), x => (`00${x.toString(16)}`).slice(-2)).join('');
-  }
-
-  /**
-   * Get signer's email address from signature
+   * Get signer's email address and index from signature.
    * @param {SignedData} signedData
-   * @returns {string}
+   * @returns {object}
    */
-  fetchSignerEmail(signedData) {
+  fetchSignerEmailAndIndex(signedData) {
     let signerEmail = null;
+    let signerIndex = null;
     Object.keys(signedData.certificates).forEach(certKey => {
       Object.keys(signedData.certificates[certKey].subject.typesAndValues).forEach(subjectKey => {
         const type = signedData.certificates[certKey].subject.typesAndValues[subjectKey].type;
         if (type == smimeSpecificationConstants.certificateTypeForSignerEmail) {
           signerEmail = signedData.certificates[certKey].subject.typesAndValues[subjectKey].value.valueBlock.value;
+          signerIndex = certKey;
         }
       });
     });
-    return signerEmail;
+    return {signerEmail, signerIndex};
   }
 
   /**
