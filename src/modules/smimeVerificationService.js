@@ -56,7 +56,7 @@ class SmimeVerificationService {
 
       if (!this.isValidSmimeEmail(parser.node, signatureNode)) {
         result.code = smimeVerificationResultCodes.CANNOT_VERIFY;
-        result.message = `Message is not digitally signed.`;
+        result.message = `messageNotSigned`;
         return resolve(result);
       }
 
@@ -74,7 +74,7 @@ class SmimeVerificationService {
       }
       catch (ex) {
         result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-        result.message = `Invalid digital signature.`;
+        result.message = `invalidSignature`;
         return resolve(result);
       }
 
@@ -89,7 +89,7 @@ class SmimeVerificationService {
          No point in continuing further. */
       if (this.isAnyCertificateExpired(cmsSignedSimpl)) {
         result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-        result.message = `The signature's certificate has expired. Be wary of message content.`;
+        result.message = `certificateExpired`;
         return resolve(result);
       }
 
@@ -142,30 +142,28 @@ class SmimeVerificationService {
     cmsSignedSimpl.verify(verificationOptions).then(verificationResult => {
       if (this.isVerificationFailed(verificationResult)) {
         result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-        result.message = `Signature verification failed. Message content may be fraudulent.`;
+        result.message = `verificationFailed`;
         return resolve(result);
       }
 
       if (!this.isFromAddressCorrect(parser, result.signer)) {
         result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-        result.message = `The "From" email address does not match the signature's email address.`;
+        result.message = `fromEmailDoesNotMatchSignature`;
         return resolve(result);
       }
 
       result.code = smimeVerificationResultCodes.VERIFICATION_OK;
-      result.message = `Message signature is valid for the sender.`;
+      result.message = `messageIsValid`;
       return resolve(result);
     }).catch(error => {
       if (error.message.indexOf('No valid certificate paths found') !== -1) {
         // This happens when we could not find the corresponding root CA in this.trustedRootCerts
         result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-        result.message = `Could not verify the signature's certificate origin.`;
+        result.message = `cannotVerifyOrigin`;
         return resolve(result);
       }
 
-      result.code = smimeVerificationResultCodes.CANNOT_VERIFY;
-      result.message = `Message cannot be verified. Unknown error.`;
-      return resolve(result);
+      throw new Error(`Message cannot be verified. Unknown error.`);
     });
   }
 

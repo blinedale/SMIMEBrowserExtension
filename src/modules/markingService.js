@@ -1,8 +1,13 @@
 import smimeVerificationResultCodes from '../constants/smimeVerificationResultCodes';
 
 class MarkingService {
-  constructor(tooltipService) {
+  /**
+   * @param {TooltipService} tooltipService 
+   * @param {Object} translations 
+   */
+  constructor(tooltipService, translations) {
     this.tooltip = tooltipService;
+    this.translations = translations;
   }
 
   markResult(domMessage, result) {
@@ -13,16 +18,17 @@ class MarkingService {
 
     const iconUrl = chrome.runtime.getURL(this.getIconPath(result));
     const infoText = this.getInfoText(result);
+    const translatedMessage = this.translations[result.message];
 
     if (this.isInbox()) { // inbox mode activated
-      this.markForInbox(domMessage, result, iconUrl, infoText);
+      this.markForInbox(domMessage, translatedMessage, iconUrl, infoText);
     } else { // gmail mode activated
-      this.markForGmail(domMessage, result, iconUrl, infoText);
+      this.markForGmail(domMessage, translatedMessage, iconUrl, infoText, result.mailId);
     }
-    this.tooltip.addTooltip(result);
+    this.tooltip.addTooltip(result.code, translatedMessage);
   }
 
-  markForInbox(domMessage, result, iconUrl, infoText) {
+  markForInbox(domMessage, translatedMessage, iconUrl, infoText) {
     // From body element, find the header.
     // Last child of header is the date element.
     // Insert our stuff as children of header before the date element.
@@ -38,13 +44,13 @@ class MarkingService {
     const el = document.createElement('span');
     el.innerHTML = infoText;
     el.setAttribute('class', 'smime-sender-inbox tooltip');
-    el.setAttribute('title', result.message);
+    el.setAttribute('title', translatedMessage);
     headerElement.insertBefore(el, headerDateElement);
-    headerElement.insertBefore(this.createCustomIcon(iconUrl, result.message), headerDateElement);
+    headerElement.insertBefore(this.createCustomIcon(iconUrl, translatedMessage), headerDateElement);
   }
 
-  markForGmail(domMessage, result, iconUrl, infoText) {
-    const markedClassName = `smime-mark-${result.mailId}`;
+  markForGmail(domMessage, translatedMessage, iconUrl, infoText, mailId) {
+    const markedClassName = `smime-mark-${mailId}`;
     const iconClass = `${markedClassName} tooltip`;
 
     const messageAttachmentIconDescriptor = {
@@ -54,7 +60,7 @@ class MarkingService {
 
     domMessage.addAttachmentIcon(messageAttachmentIconDescriptor);
 
-    this.addInfoText(markedClassName, infoText, result.message);
+    this.addInfoText(markedClassName, infoText, translatedMessage);
   }
 
   createCustomIcon(iconUrl, message) {

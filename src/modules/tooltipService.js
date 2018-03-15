@@ -5,14 +5,14 @@ class TooltipService {
     this.config = config;
   }
 
-  addTooltip(result) {
+  addTooltip(resultCode, translatedMessage) {
     let messageTheme = this.config.themeError;
-    if (result.code === smimeVerificationResultCodes.VERIFICATION_OK) {
+    if (resultCode === smimeVerificationResultCodes.VERIFICATION_OK) {
       messageTheme = this.config.themeSuccess;
     }
     let tooltipMultiple = false;
 
-    $('.inboxsdk__message_attachment_icon').attr('title', result.message);
+    $('.inboxsdk__message_attachment_icon').attr('title', translatedMessage);
     if ($(this.config.selector).hasClass('tooltipstered')) {
       tooltipMultiple = true;
     }
@@ -21,7 +21,8 @@ class TooltipService {
       animation: this.config.animation,
       theme: messageTheme,
       trigger: this.config.trigger,
-      multiple: tooltipMultiple
+      multiple: tooltipMultiple,
+      maxWidth: this.config.maxWidth
     });
   }
 }
