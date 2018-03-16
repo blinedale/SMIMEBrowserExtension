@@ -1,6 +1,6 @@
 function getResultPrototype() {
   return {
-    mailId: 0,
+    id: 0,
     code: '',
     message: '',
     signer: '',

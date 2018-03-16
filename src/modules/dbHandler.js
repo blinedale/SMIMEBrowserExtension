@@ -1,3 +1,5 @@
+import databaseStores from '../constants/databaseStores';
+
 class DbHandler {
   constructor(dbConfig, loggerService, base64lib) {
     this.db = null;
@@ -28,6 +30,7 @@ class DbHandler {
   getDb() {
     return new Promise(resolve => {
       if (!window.indexedDB) {
+        this.loggerService.err(`Browser does not seem to support IndexedDB.`);
         return resolve(null);
       }
 
@@ -45,8 +48,11 @@ class DbHandler {
       request.onupgradeneeded = event => {
         dbConnection = request.result;
         if (event.oldVersion < 1) {
-          // There is no old version - creating db and store from scratch
-          dbConnection.createObjectStore(this.dbConfig.stores.results, {keyPath: `mailId`});
+          // There is no old version - creating db and stores from scratch
+
+          Object.keys(databaseStores).forEach(storeKey =>
+            dbConnection.createObjectStore(databaseStores[storeKey], {keyPath: `id`}));
+
           this.loggerService.log(`Created database successfully.`);
         }
         if (event.oldVersion < 2) {
@@ -64,92 +70,92 @@ class DbHandler {
     });
   }
 
-  getSavedResult(mailId) {
+  get(id, store) {
     return new Promise(resolve => {
       if (!this.db) {
-        this.loggerService.err(`Tried to get result for mail id ${mailId} but there is no database connection.`);
+        this.loggerService.err(`Tried to get id ${id} in store ${store} but there is no database connection.`);
         return resolve(null);
       }
 
-      if (!mailId) {
-        this.loggerService.err(`Tried to get result for mail id ${mailId} but an empty or invalid mail id was passed.`);
+      if (!id) {
+        this.loggerService.err(`Tried to get id ${id} in store ${store} but an empty or invalid id was passed.`);
         return resolve(null);
       }
 
-      const transaction = this.db.transaction([this.dbConfig.stores.results], `readonly`);
-      const resultStore = transaction.objectStore(this.dbConfig.stores.results);
-      const request = resultStore.get(mailId);
+      const transaction = this.db.transaction([store], `readonly`);
+      const resultStore = transaction.objectStore(store);
+      const request = resultStore.get(id);
 
       request.onerror = event => {
-        this.loggerService.err(`Ran into an error when getting result for mail id ${mailId}`);
+        this.loggerService.err(`Ran into an error when getting id ${id} in store ${store}`);
         this.loggerService.err(event);
         return resolve(null);
       };
 
       request.onsuccess = () => {
-        this.loggerService.log(`Get query completed for mail id ${mailId}`);
+        this.loggerService.log(`Get query completed for id ${id} in store ${store}.`);
         this.loggerService.log(request.result);
 
         if (!request.result) {
-          this.loggerService.log(`Found nothing in db for mail id ${mailId}`);
+          this.loggerService.log(`Found nothing in db for id ${id} in store ${store}.`);
           return resolve(null);
         }
 
         if (!request.result.hasOwnProperty(`expirationTime`)) {
-          this.loggerService.log(`Got result for mail id ${mailId} but no expiration time was set.`);
+          this.loggerService.log(`Got result for id ${id} in store ${store} but no expiration time was set. Returning null instead.`);
           // Email will be verified again and this key will be updated and receive an expiration time.
           return resolve(null);
         }
 
         if (this.isExpired(request.result)) {
-          this.loggerService.log(`Got result for mail id ${mailId} but it has expired.`);
+          this.loggerService.log(`Found id ${id} in store ${store} but the entity has expired. Returning null instead.`);
           // Email will be verified again and this key will be updated.
           return resolve(null);
         }
 
-        this.loggerService.log(`Got valid result for mail id ${mailId} that has not expired yet.`);
+        this.loggerService.log(`Found id ${id} in store ${store} that has not expired yet.`);
         request.result.signer = this.base64lib.decode(request.result.signer);
         return resolve(request.result);
       };
     });
   }
 
-  saveResult(resultObject) {
+  persist(entity, store) {
     return new Promise(resolve => {
       if (!this.db) {
         this.loggerService.err(`Tried to save a verification result but there is no database connection.`);
         return resolve(null);
       }
 
-      if (!resultObject || !resultObject.mailId) {
-        this.loggerService.err(`Tried to save result for a mail id an invalid result object was passed.`);
+      if (!entity || !entity.id) {
+        this.loggerService.err(`Tried to save in store ${store} but an invalid entity was passed.`);
         return resolve(null);
       }
 
       // Cloning to not cause issues with concurrently running code using the same object.
-      const resultObjectClone = Object.assign({}, resultObject, this.calculateExpirationTime());
+      const entityClone = Object.assign({}, entity, this.calculateExpirationTime());
 
       // Obfuscating the signer's email.
-      resultObjectClone.signer =  this.base64lib.encode(resultObjectClone.signer);
+      entityClone.signer =  this.base64lib.encode(entityClone.signer);
 
-      const transaction = this.db.transaction([this.dbConfig.stores.results], `readwrite`);
+      const transaction = this.db.transaction([store], `readwrite`);
 
-      const resultStore = transaction.objectStore(this.dbConfig.stores.results);
-      resultStore.put(resultObjectClone);
+      const resultStore = transaction.objectStore(store);
+      resultStore.put(entityClone);
 
       transaction.oncomplete = () => {
-        this.loggerService.log(`Save success for mail id ${resultObjectClone.mailId}`);
-        return resolve(resultObjectClone.mailId);
+        this.loggerService.log(`Save success for id ${entityClone.id} in store ${store}.`);
+        return resolve(entityClone.id);
       };
 
       transaction.onerror = event => {
-        this.loggerService.err(`Ran into an error when saving result for mail id ${resultObjectClone.mailId}`);
+        this.loggerService.err(`Ran into an error when saving for id ${entityClone.id} in store ${store}.`);
         this.loggerService.err(event);
         return resolve(null);
       };
 
       transaction.onabort = event => {
-        this.loggerService.err(`Transaction was aborted when saving result for mail id ${resultObjectClone.mailId}`);
+        this.loggerService.err(`Transaction was aborted when saving id ${entityClone.id} in store ${store}.`);
         this.loggerService.err(event);
         return resolve(null);
       };
@@ -157,17 +163,16 @@ class DbHandler {
   }
 
   /**
-   * @param resultObject
+   * @param entity
    * @returns {boolean}
    */
-  isExpired(resultObject) {
+  isExpired(entity) {
     const currentDate = new Date();
-
-    return currentDate.getTime() > resultObject.expirationTime;
+    return currentDate.getTime() > entity.expirationTime;
   }
 
   /**
-   * @returns {object}
+   * @returns {Object}
    */
   calculateExpirationTime() {
     const millisecondsPerMinute = 60000;

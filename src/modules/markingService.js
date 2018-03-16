@@ -23,7 +23,7 @@ class MarkingService {
     if (this.isInbox()) { // inbox mode activated
       this.markForInbox(domMessage, translatedMessage, iconUrl, infoText);
     } else { // gmail mode activated
-      this.markForGmail(domMessage, translatedMessage, iconUrl, infoText, result.mailId);
+      this.markForGmail(domMessage, translatedMessage, iconUrl, infoText, result.id);
     }
     this.tooltip.addTooltip(result.code, translatedMessage);
   }

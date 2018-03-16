@@ -1,11 +1,13 @@
 import messagingMethods from '../constants/messagingMethods';
+import databaseStores from '../constants/databaseStores';
 import {smimeVerificationService, dbHandler, loggerService} from '../modules/background';
 
 chrome.runtime.onMessage.addListener(
   (request, sender, sendResponse) => {
     if (request.method === messagingMethods.verifyMessageSignature) {
       try {
-        smimeVerificationService.verifyMessageSignature(request.rawMessage, request.mailId).then(result => sendResponse(result));
+        smimeVerificationService.verifyMessageSignature(request.rawMessage, request.mailId)
+        .then(result => sendResponse(result));
       } catch (e) {
         loggerService.err(e);
         sendResponse(null);
@@ -15,13 +17,15 @@ chrome.runtime.onMessage.addListener(
     }
 
     if (request.method === messagingMethods.getSavedResult) {
-      dbHandler.getSavedResult(request.messageId).then(result => sendResponse(result));
+      dbHandler.get(request.messageId, databaseStores.signatureVerifications)
+      .then(result => sendResponse(result));
 
       return true;
     }
 
     if (request.method === messagingMethods.saveResult) {
-      dbHandler.saveResult(request.result).then(result => sendResponse(result));
+      dbHandler.persist(request.result, databaseStores.signatureVerifications)
+      .then(result => sendResponse(result));
 
       return true;
     }

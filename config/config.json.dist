@@ -3,10 +3,7 @@
   "db": {
     "dbName": "RocketSMIMEBrowserExtensionDatabase",
     "dbVersion": 1,
-    "records_expiration_minutes": 10080,
-    "stores": {
-      "results": "results"
-    }
+    "records_expiration_minutes": 10080
   },
   "tooltipster": {
     "selector": ".tooltip",

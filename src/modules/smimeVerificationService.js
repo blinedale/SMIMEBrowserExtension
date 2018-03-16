@@ -46,7 +46,7 @@ class SmimeVerificationService {
         throw new Error(`Verification is configured to check against root certificates, but we haven't parsed any. Exiting verification.`);
       }
 
-      result.mailId = mailId;
+      result.id = mailId;
 
       const parser = new MimeParser();
       parser.write(rawMessage);
