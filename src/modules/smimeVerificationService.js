@@ -86,8 +86,8 @@ class SmimeVerificationService {
       this.logger.log(`Dumping certificates.`);
       this.logger.log(cmsSignedSimpl);
       this.logger.log(`Dumping hex of serial number of client cert.`);
-      const hexSerial = buf2hex(cmsSignedSimpl.certificates[signerIndex].serialNumber.valueBlock._valueHex);
-      this.logger.log(hexSerial);
+      const clientCertificateSerialNumberHex = buf2hex(cmsSignedSimpl.certificates[signerIndex].serialNumber.valueBlock._valueHex);
+      this.logger.log(clientCertificateSerialNumberHex);
 
       /* We have to check for expiration here since we cannot do OCSP on expired certs.
          Ergo, if it's expired, it's impossible to know if the cert is revoked or not.
@@ -100,7 +100,7 @@ class SmimeVerificationService {
 
       if (this.requireRevocationCheck) {
         // OCSP check - throws exception if the check itself does not return valid result
-        this.revocationCheckProvider.isCertificateRevoked(signatureNode)
+        this.revocationCheckProvider.isCertificateRevoked(clientCertificateSerialNumberHex, signatureNode)
         .then(isRevoked => {
           if (isRevoked) {
             this.logger.log(`Certificate revoked!`);

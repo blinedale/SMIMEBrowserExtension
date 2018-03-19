@@ -2,16 +2,16 @@ import databaseStores from '../constants/databaseStores';
 
 class SignatureVerificationRepository {
   /**
-     * @param {DbHandler} dbHandler 
-     * @param {Object} base64lib 
-     */
+   * @param {DbHandler} dbHandler 
+   * @param {Object} base64lib 
+   */
   constructor(dbHandler, base64lib) {
     this.dbHandler = dbHandler;
     this.base64lib = base64lib;
   }
 
-  get(id) {
-    return this.dbHandler.get(id, databaseStores.signatureVerifications)
+  get(mailId) {
+    return this.dbHandler.get(mailId, databaseStores.signatureVerifications)
     .then(result => {
       if (result) {
         result.signer = this.base64lib.decode(result.signer);

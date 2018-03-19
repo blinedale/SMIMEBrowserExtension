@@ -135,6 +135,7 @@ class DbHandler {
 
       transaction.oncomplete = () => {
         this.loggerService.log(`Save success for id ${entityClone.id} in store ${store}.`);
+        this.loggerService.log(entityClone);
         return resolve(entityClone.id);
       };
 
