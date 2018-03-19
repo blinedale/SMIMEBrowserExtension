@@ -6,6 +6,7 @@ import DbHandler from '../dbHandler';
 import CertificateProvider from '../certificateProvider';
 import CertificateParser from '../certificateParser';
 import RevocationCheckProvider from '../revocationCheckProvider';
+import SignatureVerificationRepository from '../signatureVerificationRepository';
 
 const base64lib = Base64lib.Base64;
 
@@ -16,6 +17,7 @@ const smimeVerificationConfig = configService.get('smimeVerification');
 
 const loggerService = new Logger(loggerConfig);
 const dbHandler = new DbHandler(dbConfig, loggerService, base64lib);
+const signatureVerificationRepository = new SignatureVerificationRepository(dbHandler, base64lib);
 
 const revocationCheckProvider = new RevocationCheckProvider(smimeVerificationConfig, loggerService, base64lib);
 const certificateParser = new CertificateParser(base64lib);
@@ -26,6 +28,6 @@ const smimeVerificationService = new SmimeVerificationService(loggerService, smi
 
 export {
   smimeVerificationService,
-  dbHandler,
+  signatureVerificationRepository,
   loggerService
 };

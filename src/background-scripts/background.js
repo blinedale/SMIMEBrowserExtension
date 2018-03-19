@@ -1,6 +1,5 @@
 import messagingMethods from '../constants/messagingMethods';
-import databaseStores from '../constants/databaseStores';
-import {smimeVerificationService, dbHandler, loggerService} from '../modules/background';
+import {smimeVerificationService, signatureVerificationRepository, loggerService} from '../modules/background';
 
 chrome.runtime.onMessage.addListener(
   (request, sender, sendResponse) => {
@@ -17,14 +16,14 @@ chrome.runtime.onMessage.addListener(
     }
 
     if (request.method === messagingMethods.getSavedResult) {
-      dbHandler.get(request.messageId, databaseStores.signatureVerifications)
+      signatureVerificationRepository.get(request.messageId)
       .then(result => sendResponse(result));
 
       return true;
     }
 
     if (request.method === messagingMethods.saveResult) {
-      dbHandler.persist(request.result, databaseStores.signatureVerifications)
+      signatureVerificationRepository.persist(request.result)
       .then(result => sendResponse(result));
 
       return true;

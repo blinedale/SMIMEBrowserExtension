@@ -101,20 +101,13 @@ class DbHandler {
           return resolve(null);
         }
 
-        if (!request.result.hasOwnProperty(`expirationTime`)) {
-          this.loggerService.log(`Got result for id ${id} in store ${store} but no expiration time was set. Returning null instead.`);
-          // Email will be verified again and this key will be updated and receive an expiration time.
-          return resolve(null);
-        }
-
         if (this.isExpired(request.result)) {
           this.loggerService.log(`Found id ${id} in store ${store} but the entity has expired. Returning null instead.`);
-          // Email will be verified again and this key will be updated.
+          // Entity will be updated with a new expirationTime.
           return resolve(null);
         }
 
         this.loggerService.log(`Found id ${id} in store ${store} that has not expired yet.`);
-        request.result.signer = this.base64lib.decode(request.result.signer);
         return resolve(request.result);
       };
     });
@@ -134,9 +127,6 @@ class DbHandler {
 
       // Cloning to not cause issues with concurrently running code using the same object.
       const entityClone = Object.assign({}, entity, this.calculateExpirationTime());
-
-      // Obfuscating the signer's email.
-      entityClone.signer =  this.base64lib.encode(entityClone.signer);
 
       const transaction = this.db.transaction([store], `readwrite`);
 
