@@ -17,12 +17,7 @@ class RevocationCheckProvider {
   /**
    * Resolves to a boolean - true if the certificate is revoked, false if the certificate is not revoked.
    * Throws an exception if we cannot get a conclusive result. 
-   * 
-   * Example response from the included OCSP server code:
-   * {
-   *   client_certificate_serial_number: "[32 char hex value]", 
-   *   ocsp_result: "unauthorized/good/revoked"
-   * }
+   *
    * @param {string} clientCertificateSerialNumber Serial number in hex format.
    * @param {MimeNode} signatureNode 
    * @returns {Promise}
@@ -42,12 +37,23 @@ class RevocationCheckProvider {
       this.logger.log(`Found no cached revocation status. Will perform a new revocation check.`);
       this.performRevocationCheck(signatureNode)
       .then(revocationStatus => {
+        // Throws exception if status is not recognized which prohibits persisting uninteresting results.
+        const isRevoked = this.processResult(revocationStatus); 
+        
         this.repository.persist({id: clientCertificateSerialNumber, status: revocationStatus});
-        return this.processResult(revocationStatus);
+        return isRevoked;
       });
     });
   }
 
+  /**
+   * Example response from the included OCSP server code:
+   * {
+   *   client_certificate_serial_number: "[32 char hex value]", 
+   *   ocsp_result: "unauthorized/good/revoked"
+   * }
+   * @param {MimeNode} signatureNode 
+   */
   performRevocationCheck(signatureNode) {
     const sigString = String.fromCharCode.apply(null, signatureNode.content);
     const sigBase64 = this.base64lib.btoa(sigString);
