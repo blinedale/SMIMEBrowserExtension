@@ -224,7 +224,7 @@ describe('SmimeVerificationService', () => {
 
       const sigNode = rootNode.createChild('application/pkcs7-signature; name=smime.p7s');
       sigNode.setHeader('Content-Transfer-Encoding', 'base64');
-      sigNode.setHeader('Content-Disposition', 'attachment; filename=smime.p7s');
+      sigNode.setHeader('Content-Disposition', 'attachment; filenamailme=smime.p7s');
       sigNode.setContent('some text that is definitely not a signature');
 
       const message = rootNode.build();

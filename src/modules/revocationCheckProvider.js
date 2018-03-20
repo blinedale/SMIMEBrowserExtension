@@ -12,6 +12,7 @@ class RevocationCheckProvider {
     this.ocspUrl = config.ocspUrl;
     this.logger = loggerService;
     this.base64lib = base64lib;
+    this.unrecognizedStatusMessage = `Unrecognized revocation status.`;
   }
 
   /**
@@ -23,25 +24,30 @@ class RevocationCheckProvider {
    * @returns {Promise}
    */
   isCertificateRevoked(clientCertificateSerialNumber, signatureNode) {
-    this.logger.log(`This is where we do the OCSP check`);
+    return new Promise((resolve, reject) => {
+      this.logger.log(`This is where we do the OCSP check`);
 
-    this.logger.log(`Checking if we already checked the revocation status of client certificate ${clientCertificateSerialNumber}.`);
-    this.repository.get(clientCertificateSerialNumber)
-    .then(revocationCheckResult => {
-      if (revocationCheckResult) {
-        this.logger.log(`Found cached revocation status.`);
-        this.logger.log(revocationCheckResult);
-        return this.processResult(revocationCheckResult.status);
-      }
+      this.logger.log(`Checking if we already checked the revocation status of client certificate ${clientCertificateSerialNumber}.`);
+      this.repository.get(clientCertificateSerialNumber)
+      .then(revocationCheckResult => {
+        if (revocationCheckResult) {
+          this.logger.log(`Found cached revocation status.`);
+          this.logger.log(revocationCheckResult);
+          return resolve(this.processResult(revocationCheckResult.status));
+        }
+  
+        this.logger.log(`Found no cached revocation status. Will perform a new revocation check.`);
+        this.performRevocationCheck(signatureNode)
+        .then(revocationStatus => {
+          const isRevoked = this.processResult(revocationStatus); 
 
-      this.logger.log(`Found no cached revocation status. Will perform a new revocation check.`);
-      this.performRevocationCheck(signatureNode)
-      .then(revocationStatus => {
-        // Throws exception if status is not recognized which prohibits persisting uninteresting results.
-        const isRevoked = this.processResult(revocationStatus); 
-        
-        this.repository.persist({id: clientCertificateSerialNumber, status: revocationStatus});
-        return isRevoked;
+          if (typeof isRevoked !== 'boolean') {
+            reject(isRevoked);
+          }
+          
+          this.repository.persist({id: clientCertificateSerialNumber, status: revocationStatus});
+          return resolve(isRevoked);
+        });
       });
     });
   }
@@ -53,6 +59,7 @@ class RevocationCheckProvider {
    *   ocsp_result: "unauthorized/good/revoked"
    * }
    * @param {MimeNode} signatureNode 
+   * @returns {Promise}
    */
   performRevocationCheck(signatureNode) {
     const sigString = String.fromCharCode.apply(null, signatureNode.content);
@@ -74,10 +81,7 @@ class RevocationCheckProvider {
       case ocspCheckResultCodes.REVOKED:
         return true; // IS revoked
       default:
-        const message = `Unrecognized revocation status.`;
-        this.logger.err(message);
-        this.logger.err(result);
-        throw new Error(message);
+        return new Error(this.unrecognizedStatusMessage);
     }
   }
 }

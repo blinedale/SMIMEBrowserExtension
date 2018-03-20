@@ -102,7 +102,7 @@ class SmimeVerificationService {
         // OCSP check - throws exception if the check itself does not return valid result
         this.revocationCheckProvider.isCertificateRevoked(clientCertificateSerialNumberHex, signatureNode)
         .then(isRevoked => {
-          if (isRevoked) {
+          if (isRevoked === false) {
             this.logger.log(`Certificate revoked!`);
             result.code = smimeVerificationResultCodes.FRAUD_WARNING;
             result.message = `The signature's certificate has been revoked. Be wary of message content.`;
