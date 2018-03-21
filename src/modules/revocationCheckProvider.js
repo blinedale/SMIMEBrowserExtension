@@ -42,7 +42,7 @@ class RevocationCheckProvider {
           const isRevoked = this.processResult(revocationStatus);
 
           if (typeof isRevoked !== 'boolean') {
-            reject(isRevoked);
+            return reject(isRevoked);
           }
 
           this.repository.persist({id: clientCertificateSerialNumber, status: revocationStatus});

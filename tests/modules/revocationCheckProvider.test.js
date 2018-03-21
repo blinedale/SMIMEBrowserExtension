@@ -68,13 +68,13 @@ describe('RevocationCheckProvider', () => {
       getStub.resolves(null);
       performRevocationCheckStub.resolves(ocspCheckResultCodes.UNAUTHORIZED);
 
-      provider.isCertificateRevoked(serialNumber, signatureNode)
+      return provider.isCertificateRevoked(serialNumber, signatureNode)
       .catch(isRevoked => {
         expect(isRevoked instanceof TypeError).toBe(true); 
         expect(performRevocationCheckStub.calledOnce).toBe(true);
         expect(processResultSpy.calledOnce).toBe(true);
         expect(getStub.calledOnce).toBe(true);
-        expect(persistStub.calledOnce).toBe(true);
+        expect(persistStub.notCalled).toBe(true);
       });
     });
   });

@@ -39,11 +39,11 @@ class SmimeVerificationService {
    * @returns {Promise}
    */
   verifyMessageSignature(rawMessage, mailId) {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       const result = getResultPrototype();
 
       if (this.requireRootCerts && this.trustedRootCerts.length === 0) {
-        throw new Error(`Verification is configured to check against root certificates, but we haven't parsed any. Exiting verification.`);
+        return reject(new Error(`Verification is configured to check against root certificates, but we haven't parsed any. Exiting verification.`));
       }
 
       result.id = mailId;
@@ -109,13 +109,11 @@ class SmimeVerificationService {
             return resolve(result);
           }
           this.logger.log(`Certificate is not revoked!`);
-          return this.doVerification(parser, cmsSignedSimpl, result, resolve);
+          return this.doVerification(parser, cmsSignedSimpl, result, resolve, reject);
         })
-        .catch(error => {
-
-        });
+        .catch(error => reject(error));
       } else {
-        return this.doVerification(parser, cmsSignedSimpl, result, resolve);
+        return this.doVerification(parser, cmsSignedSimpl, result, resolve, reject);
       }
     });
   }
@@ -125,9 +123,11 @@ class SmimeVerificationService {
    * @param {MimeParser} parser 
    * @param {SignedData} cmsSignedSimpl 
    * @param {object} result 
+   * @param {function} resolve 
+   * @param {function} reject 
    * @returns {Promise}
    */
-  doVerification(parser, cmsSignedSimpl, result, resolve) {
+  doVerification(parser, cmsSignedSimpl, result, resolve, reject) {
     // Get content of email that was signed. Should be entire first child node.
     const signedDataBuffer = stringToArrayBuffer(parser.nodes.node1.raw.replace(/\n/g, `\r\n`));
 
@@ -164,14 +164,14 @@ class SmimeVerificationService {
       result.message = `messageIsValid`;
       return resolve(result);
     }).catch(error => {
-      if (error.message.indexOf('No valid certificate paths found') !== -1) {
+      if (error.message && error.message.indexOf('No valid certificate paths found') !== -1) {
         // This happens when we could not find the corresponding root CA in this.trustedRootCerts
         result.code = smimeVerificationResultCodes.FRAUD_WARNING;
         result.message = `cannotVerifyOrigin`;
         return resolve(result);
       }
 
-      throw new Error(`Message cannot be verified. Unknown error.`);
+      return reject(new Error(error));
     });
   }
 
