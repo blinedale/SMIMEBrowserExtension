@@ -7,17 +7,31 @@ class SmimeMessageHandler {
     this.gmailSourceService = gmailSourceService;
   }
 
+  chromeRuntimeSendMessage(payload) {
+    return new Promise(((resolve, reject) => {
+      chrome.runtime.sendMessage(payload, result => {
+        if (result) {
+          resolve(result);
+        } else {
+          reject(new Error('Chrome Runtime sendMessage failed.'));
+        }
+      });
+    }));
+  }
+
   handle(domMessage, messageId) {
-    chrome.runtime.sendMessage({method: messagingMethods.getSavedResult, messageId}, result => {
+    this.chromeRuntimeSendMessage({method: messagingMethods.getSavedResult, messageId})
+    .then(result => {
       if (result) {
-        // Found something in the database for this messageId. Let's mark and we're done.
         this.markingService.markResult(domMessage, result);
       } else {
-        // No saved result for this messageId. Let's fetch message source and verify it.
         this.gmailSourceService.getRawMessage(messageId, false)
         .then(rawMessage => this.verifyAndMark(rawMessage, messageId, domMessage))
         .catch(err => this.loggerService.err(err));
       }
+    })
+    .catch(error => {
+      this.loggerService.log(error);
     });
   }
 
