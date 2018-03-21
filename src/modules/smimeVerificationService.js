@@ -11,7 +11,7 @@ import buf2hex from './buf2hex';
 class SmimeVerificationService {
   /**
    * @param {Logger} loggerService
-   * @param {Object} config
+   * @param {object} config
    * @param {CertificateProvider} certificateProvider
    * @param {RevocationCheckProvider} revocationCheckProvider
    */
@@ -102,14 +102,17 @@ class SmimeVerificationService {
         // OCSP check - throws exception if the check itself does not return valid result
         this.revocationCheckProvider.isCertificateRevoked(clientCertificateSerialNumberHex, signatureNode)
         .then(isRevoked => {
-          if (isRevoked === false) {
+          if (isRevoked === true) {
             this.logger.log(`Certificate revoked!`);
             result.code = smimeVerificationResultCodes.FRAUD_WARNING;
-            result.message = `The signature's certificate has been revoked. Be wary of message content.`;
+            result.message = `certificateRevoked`;
             return resolve(result);
           }
           this.logger.log(`Certificate is not revoked!`);
           return this.doVerification(parser, cmsSignedSimpl, result, resolve);
+        })
+        .catch(error => {
+
         });
       } else {
         return this.doVerification(parser, cmsSignedSimpl, result, resolve);
@@ -121,7 +124,7 @@ class SmimeVerificationService {
    * Performs the actual cryptographic verification plus additional sanity checks.
    * @param {MimeParser} parser 
    * @param {SignedData} cmsSignedSimpl 
-   * @param {Object} result 
+   * @param {object} result 
    * @returns {Promise}
    */
   doVerification(parser, cmsSignedSimpl, result, resolve) {

@@ -6,7 +6,8 @@ const translations = {
     verificationFailed: `Signature verification failed. Be wary of message content.`,
     certificateExpired: `The signature's certificate has expired. Be wary of message content.`,
     invalidSignature: `Invalid digital signature. Be wary of message content.`,
-    messageNotSigned: `Message is not digitally signed.`
+    messageNotSigned: `Message is not digitally signed.`,
+    certificateRevoked: `The signature's certificate has been revoked. Be wary of message content.`
   }
 };
 

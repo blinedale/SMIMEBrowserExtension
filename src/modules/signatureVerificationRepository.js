@@ -3,13 +3,17 @@ import databaseStores from '../constants/databaseStores';
 class SignatureVerificationRepository {
   /**
    * @param {DbHandler} dbHandler 
-   * @param {Object} base64lib 
+   * @param {object} base64lib 
    */
   constructor(dbHandler, base64lib) {
     this.dbHandler = dbHandler;
     this.base64lib = base64lib;
   }
 
+  /**
+   * @param {string} mailId 
+   * @returns {Promise}
+   */  
   get(mailId) {
     return this.dbHandler.get(mailId, databaseStores.signatureVerifications)
     .then(result => {
@@ -21,6 +25,10 @@ class SignatureVerificationRepository {
     });
   }
 
+  /**
+   * @param {object} signatureVerification
+   * @returns {Promise}
+   */  
   persist(signatureVerification) {
     const obfuscatedEntity = Object.assign(
       {},

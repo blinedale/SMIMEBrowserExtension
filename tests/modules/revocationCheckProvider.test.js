@@ -26,15 +26,20 @@ describe('RevocationCheckProvider', () => {
   const serialNumber = '1111';
   const signatureNode = new MimeBuilder();
 
+  const getResultGood = {id: serialNumber, status: ocspCheckResultCodes.GOOD};
+  const getResultRevoked = {id: serialNumber, status: ocspCheckResultCodes.REVOKED};
+
+
   describe('Has not cached a revocation result', () => {
     it('Checks revocation status and gets a good certificate', () => {
-      expect.assertions(4);
+      expect.assertions(5);
       getStub.resolves(null);
       performRevocationCheckStub.resolves(ocspCheckResultCodes.GOOD);
 
       return provider.isCertificateRevoked(serialNumber, signatureNode).then(
         isRevoked => {
           expect(isRevoked).toBe(false);
+          expect(performRevocationCheckStub.calledOnce).toBe(true);
           expect(processResultSpy.calledOnce).toBe(true);
           expect(getStub.calledOnce).toBe(true);
           expect(persistStub.calledOnce).toBe(true);
@@ -43,13 +48,14 @@ describe('RevocationCheckProvider', () => {
     });
 
     it('Checks revocation status and gets a revoked certificate', () => {
-      expect.assertions(4);
+      expect.assertions(5);
       getStub.resolves(null);
       performRevocationCheckStub.resolves(ocspCheckResultCodes.REVOKED);
 
       return provider.isCertificateRevoked(serialNumber, signatureNode).then(
         isRevoked => {
           expect(isRevoked).toBe(true);
+          expect(performRevocationCheckStub.calledOnce).toBe(true);
           expect(processResultSpy.calledOnce).toBe(true);
           expect(getStub.calledOnce).toBe(true);
           expect(persistStub.calledOnce).toBe(true);
@@ -58,13 +64,14 @@ describe('RevocationCheckProvider', () => {
     });
 
     it('Checks revocation status and gets an unhandled status code', () => {
-      expect.assertions(4);
+      expect.assertions(5);
       getStub.resolves(null);
       performRevocationCheckStub.resolves(ocspCheckResultCodes.UNAUTHORIZED);
 
       provider.isCertificateRevoked(serialNumber, signatureNode)
       .catch(isRevoked => {
-        expect(isRevoked instanceof Error).toBe(true); 
+        expect(isRevoked instanceof TypeError).toBe(true); 
+        expect(performRevocationCheckStub.calledOnce).toBe(true);
         expect(processResultSpy.calledOnce).toBe(true);
         expect(getStub.calledOnce).toBe(true);
         expect(persistStub.calledOnce).toBe(true);
@@ -73,24 +80,40 @@ describe('RevocationCheckProvider', () => {
   });
 
   describe('Has a cached a revocation result', () => {
-    // it('Checks revocation status and gets a revoked certificate', () => {
-    //   expect.assertions(4);
-    //   getStub.resolves(null);
-    //   performRevocationCheckStub.resolves(ocspCheckResultCodes.REVOKED);
+    it('Gets a cached result that is good', () => {
+      expect.assertions(5);
+      getStub.resolves(getResultGood);
 
-    //   return provider.isCertificateRevoked(serialNumber, signatureNode).then(
-    //     isRevoked => {
-    //       expect(isRevoked).toBe(true);
-    //       expect(processResultSpy.calledOnce).toBe(true);
-    //       expect(getStub.calledOnce).toBe(true);
-    //       expect(persistStub.calledOnce).toBe(true);
-    //     }
-    //   );
-    // });
+      return provider.isCertificateRevoked(serialNumber, signatureNode).then(
+        isRevoked => {
+          expect(isRevoked).toBe(false);
+          expect(performRevocationCheckStub.notCalled).toBe(true);
+          expect(processResultSpy.calledOnce).toBe(true);
+          expect(getStub.calledOnce).toBe(true);
+          expect(persistStub.notCalled).toBe(true);
+        }
+      );
+    });
+
+    it('Gets a cached result that is revoked', () => {
+      expect.assertions(5);
+      getStub.resolves(getResultRevoked);
+
+      return provider.isCertificateRevoked(serialNumber, signatureNode).then(
+        isRevoked => {
+          expect(isRevoked).toBe(true);
+          expect(performRevocationCheckStub.notCalled).toBe(true);
+          expect(processResultSpy.calledOnce).toBe(true);
+          expect(getStub.calledOnce).toBe(true);
+          expect(persistStub.notCalled).toBe(true);
+        }
+      );
+    });
   });
 
   afterEach(() => {
     processResultSpy.reset();
+    performRevocationCheckStub.reset();
     getStub.reset();
     persistStub.reset();
   });

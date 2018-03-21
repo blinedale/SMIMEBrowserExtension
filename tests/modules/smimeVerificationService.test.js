@@ -5,22 +5,30 @@ import MimeBuilder from 'emailjs-mime-builder';
 
 import smimeVerificationResultCodes from '../../src/constants/smimeVerificationResultCodes';
 import SmimeVerificationService from '../../src/modules/smimeVerificationService';
+import RevocationCheckProvider from '../../src/modules/revocationCheckProvider';
 import {
   emailWithAsn1CompliantButInvalidSignature,
   emailWithValidSignatureAndIncorrectFromAddress,
   emailWithValidSignatureAndManipulatedMessage,
-  emailWithValidSignatureAndExpiredCertificate
-} from "../helpers/smimeEmails";
-import MockLogger from "../helpers/mockLogger";
+  emailWithValidSignatureAndExpiredCertificate,
+  emailWithValidEverything
+} from '../helpers/smimeEmails';
+import MockLogger from '../helpers/mockLogger';
 
-describe('SmimeVerificationService', () => {
+/* TODO: All included test data was made with certificates that expire in September 2018. */
 
-  /* TODO: All included test data was made with certificates that expire in September 2018. */
+const mockLogger = new MockLogger();
+const mailId = 'abc123';
 
-  const mockLogger = new MockLogger();
+describe('SmimeVerificationService - revocation check off', () => {
+
   const config = {requireRootCerts: false, requireRevocationCheck: false};
 
-  const smimeVerificationService = new SmimeVerificationService(mockLogger, config, null, null);
+  const revocationCheckProvider = new RevocationCheckProvider(null, {ocspUrl: ''}, mockLogger, null);
+  const isCertificateRevokedStub = sinon.stub(revocationCheckProvider, 'isCertificateRevoked');
+
+  const smimeVerificationService = new SmimeVerificationService(mockLogger, config, null, revocationCheckProvider);
+
   const isValidSmimeEmailSpy = sinon.spy(smimeVerificationService, 'isValidSmimeEmail');
   const isRootNodeContentTypeValueCorrectSpy = sinon.spy(smimeVerificationService, 'isRootNodeContentTypeValueCorrect');
   const isRootNodeContentTypeProtocolCorrectSpy = sinon.spy(smimeVerificationService, 'isRootNodeContentTypeProtocolCorrect');
@@ -33,12 +41,13 @@ describe('SmimeVerificationService', () => {
   const isVerificationFailedSpy = sinon.spy(smimeVerificationService, 'isVerificationFailed');
   const isFromAddressCorrectSpy = sinon.spy(smimeVerificationService, 'isFromAddressCorrect');
 
-  describe('ways to fail isValidSmimeEmail', () => {
+  describe('ways to fail isValidSmimeEmail - revocation check off', () => {
     it('root node has no content type', () => {
+      expect.assertions(13);
       const rootNode = new MimeBuilder();
       const message = rootNode.build();
 
-      return smimeVerificationService.verifyMessageSignature(message).then(
+      return smimeVerificationService.verifyMessageSignature(message, mailId).then(
         result => {
           expect(result.code).toBe(smimeVerificationResultCodes.CANNOT_VERIFY);
           expect(isValidSmimeEmailSpy.calledOnce).toBe(true);
@@ -50,6 +59,7 @@ describe('SmimeVerificationService', () => {
           expect(getSignedDataFromAsn1Spy.notCalled).toBe(true);
           expect(fetchSignerEmailSpy.notCalled).toBe(true);
           expect(isAnyCertificateExpiredSpy.notCalled).toBe(true);
+          expect(isCertificateRevokedStub.notCalled).toBe(true);
           expect(isVerificationFailedSpy.notCalled).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
@@ -57,10 +67,11 @@ describe('SmimeVerificationService', () => {
     });
 
     it('root node has no child nodes', () => {
+      expect.assertions(13);
       const rootNode = new MimeBuilder('multipart/mixed');
       const message = rootNode.build();
 
-      return smimeVerificationService.verifyMessageSignature(message).then(
+      return smimeVerificationService.verifyMessageSignature(message, mailId).then(
         result => {
           expect(result.code).toBe(smimeVerificationResultCodes.CANNOT_VERIFY);
           expect(isValidSmimeEmailSpy.calledOnce).toBe(true);
@@ -72,6 +83,7 @@ describe('SmimeVerificationService', () => {
           expect(getSignedDataFromAsn1Spy.notCalled).toBe(true);
           expect(fetchSignerEmailSpy.notCalled).toBe(true);
           expect(isAnyCertificateExpiredSpy.notCalled).toBe(true);
+          expect(isCertificateRevokedStub.notCalled).toBe(true);
           expect(isVerificationFailedSpy.notCalled).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
@@ -79,13 +91,14 @@ describe('SmimeVerificationService', () => {
     });
 
     it('root node has no signature node', () => {
+      expect.assertions(13);
       const rootNode = new MimeBuilder('multipart/mixed');
       const contentNode = rootNode.createChild('text/plain; charset=utf-8');
       contentNode.setContent('some content');
 
       const message = rootNode.build();
 
-      return smimeVerificationService.verifyMessageSignature(message).then(
+      return smimeVerificationService.verifyMessageSignature(message, mailId).then(
         result => {
           expect(result.code).toBe(smimeVerificationResultCodes.CANNOT_VERIFY);
           expect(isValidSmimeEmailSpy.calledOnce).toBe(true);
@@ -97,6 +110,7 @@ describe('SmimeVerificationService', () => {
           expect(getSignedDataFromAsn1Spy.notCalled).toBe(true);
           expect(fetchSignerEmailSpy.notCalled).toBe(true);
           expect(isAnyCertificateExpiredSpy.notCalled).toBe(true);
+          expect(isCertificateRevokedStub.notCalled).toBe(true);
           expect(isVerificationFailedSpy.notCalled).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
@@ -104,6 +118,7 @@ describe('SmimeVerificationService', () => {
     });
 
     it('root node has incorrect content type', () => {
+      expect.assertions(13);
       const rootNode = new MimeBuilder('multipart/mixed');
       const contentNode = rootNode.createChild('text/plain; charset=utf-8');
       contentNode.setContent('some content');
@@ -113,7 +128,7 @@ describe('SmimeVerificationService', () => {
 
       const message = rootNode.build();
 
-      return smimeVerificationService.verifyMessageSignature(message).then(
+      return smimeVerificationService.verifyMessageSignature(message, mailId).then(
         result => {
           expect(result.code).toBe(smimeVerificationResultCodes.CANNOT_VERIFY);
           expect(isValidSmimeEmailSpy.calledOnce).toBe(true);
@@ -125,6 +140,7 @@ describe('SmimeVerificationService', () => {
           expect(getSignedDataFromAsn1Spy.notCalled).toBe(true);
           expect(fetchSignerEmailSpy.notCalled).toBe(true);
           expect(isAnyCertificateExpiredSpy.notCalled).toBe(true);
+          expect(isCertificateRevokedStub.notCalled).toBe(true);
           expect(isVerificationFailedSpy.notCalled).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
@@ -132,6 +148,7 @@ describe('SmimeVerificationService', () => {
     });
 
     it('root node has incorrect content type protocol', () => {
+      expect.assertions(13);
       const rootNode = new MimeBuilder('multipart/signed; protocol="application/json"');
       const contentNode = rootNode.createChild('text/plain; charset=utf-8');
       contentNode.setContent('some content');
@@ -141,7 +158,7 @@ describe('SmimeVerificationService', () => {
 
       const message = rootNode.build();
 
-      return smimeVerificationService.verifyMessageSignature(message).then(
+      return smimeVerificationService.verifyMessageSignature(message, mailId).then(
         result => {
           expect(result.code).toBe(smimeVerificationResultCodes.CANNOT_VERIFY);
           expect(isValidSmimeEmailSpy.calledOnce).toBe(true);
@@ -153,6 +170,7 @@ describe('SmimeVerificationService', () => {
           expect(getSignedDataFromAsn1Spy.notCalled).toBe(true);
           expect(fetchSignerEmailSpy.notCalled).toBe(true);
           expect(isAnyCertificateExpiredSpy.notCalled).toBe(true);
+          expect(isCertificateRevokedStub.notCalled).toBe(true);
           expect(isVerificationFailedSpy.notCalled).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
@@ -160,6 +178,7 @@ describe('SmimeVerificationService', () => {
     });
 
     it('root node has incorrect content type micalg', () => {
+      expect.assertions(13);
       const rootNode = new MimeBuilder('multipart/signed; protocol="application/pkcs7-signature"; micalg=invalidValue');
       const contentNode = rootNode.createChild('text/plain; charset=utf-8');
       contentNode.setContent('some content');
@@ -169,7 +188,7 @@ describe('SmimeVerificationService', () => {
 
       const message = rootNode.build();
 
-      return smimeVerificationService.verifyMessageSignature(message).then(
+      return smimeVerificationService.verifyMessageSignature(message, mailId).then(
         result => {
           expect(result.code).toBe(smimeVerificationResultCodes.CANNOT_VERIFY);
           expect(isValidSmimeEmailSpy.calledOnce).toBe(true);
@@ -181,6 +200,7 @@ describe('SmimeVerificationService', () => {
           expect(getSignedDataFromAsn1Spy.notCalled).toBe(true);
           expect(fetchSignerEmailSpy.notCalled).toBe(true);
           expect(isAnyCertificateExpiredSpy.notCalled).toBe(true);
+          expect(isCertificateRevokedStub.notCalled).toBe(true);
           expect(isVerificationFailedSpy.notCalled).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
@@ -188,6 +208,7 @@ describe('SmimeVerificationService', () => {
     });
 
     it('signature node has incorrect content type', () => {
+      expect.assertions(13);
       const rootNode = new MimeBuilder('multipart/signed; protocol="application/pkcs7-signature"; micalg=md5');
       const contentNode = rootNode.createChild('text/plain; charset=utf-8');
       contentNode.setContent('some content');
@@ -197,7 +218,7 @@ describe('SmimeVerificationService', () => {
 
       const message = rootNode.build();
 
-      return smimeVerificationService.verifyMessageSignature(message).then(
+      return smimeVerificationService.verifyMessageSignature(message, mailId).then(
         result => {
           expect(result.code).toBe(smimeVerificationResultCodes.CANNOT_VERIFY);
           expect(isValidSmimeEmailSpy.calledOnce).toBe(true);
@@ -209,6 +230,7 @@ describe('SmimeVerificationService', () => {
           expect(getSignedDataFromAsn1Spy.notCalled).toBe(true);
           expect(fetchSignerEmailSpy.notCalled).toBe(true);
           expect(isAnyCertificateExpiredSpy.notCalled).toBe(true);
+          expect(isCertificateRevokedStub.notCalled).toBe(true);
           expect(isVerificationFailedSpy.notCalled).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
@@ -217,7 +239,9 @@ describe('SmimeVerificationService', () => {
   });
 
   describe('ways to get fraud warning from invalid signature', () => {
+
     it('has an invalid signature', () => {
+      expect.assertions(13);
       const rootNode = new MimeBuilder('multipart/signed; protocol="application/pkcs7-signature"; micalg=md5');
       const contentNode = rootNode.createChild('text/plain; charset=utf-8');
       contentNode.setContent('some content');
@@ -229,7 +253,7 @@ describe('SmimeVerificationService', () => {
 
       const message = rootNode.build();
 
-      return smimeVerificationService.verifyMessageSignature(message).then(
+      return smimeVerificationService.verifyMessageSignature(message, mailId).then(
         result => {
           expect(result.code).toBe(smimeVerificationResultCodes.FRAUD_WARNING);
           expect(isValidSmimeEmailSpy.calledOnce).toBe(true);
@@ -241,13 +265,17 @@ describe('SmimeVerificationService', () => {
           expect(getSignedDataFromAsn1Spy.notCalled).toBe(true);
           expect(fetchSignerEmailSpy.notCalled).toBe(true);
           expect(isAnyCertificateExpiredSpy.notCalled).toBe(true);
+          expect(isCertificateRevokedStub.notCalled).toBe(true);
           expect(isVerificationFailedSpy.notCalled).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
       );
     });
 
-    it('has valid asn1 object as signature but it can\'t be cast to SignedData', () =>
+    it('has valid asn1 object as signature but it can\'t be cast to SignedData', () => {
+
+      expect.assertions(13);
+    
       /* This example email's signature is parsed into a valid asn1 object but will cause an exception to be thrown inside
       getSignedDataFromAsn1 when the asn1 object is used to create a ContentInfo object.
 
@@ -256,7 +284,7 @@ describe('SmimeVerificationService', () => {
 
       Expected exception message: Object's schema was not verified against input data for CMS_CONTENT_INFO
        */
-      smimeVerificationService.verifyMessageSignature(emailWithAsn1CompliantButInvalidSignature).then(
+      return smimeVerificationService.verifyMessageSignature(emailWithAsn1CompliantButInvalidSignature, mailId).then(
         result => {
           expect(result.code).toBe(smimeVerificationResultCodes.FRAUD_WARNING);
           expect(isValidSmimeEmailSpy.calledOnce).toBe(true);
@@ -268,16 +296,19 @@ describe('SmimeVerificationService', () => {
           expect(getSignedDataFromAsn1Spy.calledOnce).toBe(true);
           expect(fetchSignerEmailSpy.notCalled).toBe(true);
           expect(isAnyCertificateExpiredSpy.notCalled).toBe(true);
+          expect(isCertificateRevokedStub.notCalled).toBe(true);
           expect(isVerificationFailedSpy.notCalled).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
       )
-    );
+    });
   });
 
   describe('ways to get fraud warning from valid signature', () => {
-    it('has a valid signature but one of the included certificates has expired', () =>
-      smimeVerificationService.verifyMessageSignature(emailWithValidSignatureAndExpiredCertificate).then(
+    it('one of the included certificates has expired', () => {
+      expect.assertions(13);
+
+      return smimeVerificationService.verifyMessageSignature(emailWithValidSignatureAndExpiredCertificate, mailId).then(
         result => {
           expect(result.code).toBe(smimeVerificationResultCodes.FRAUD_WARNING);
           expect(isValidSmimeEmailSpy.calledOnce).toBe(true);
@@ -289,11 +320,12 @@ describe('SmimeVerificationService', () => {
           expect(getSignedDataFromAsn1Spy.calledOnce).toBe(true);
           expect(fetchSignerEmailSpy.calledOnce).toBe(true);
           expect(isAnyCertificateExpiredSpy.calledOnce).toBe(true);
+          expect(isCertificateRevokedStub.notCalled).toBe(true);
           expect(isVerificationFailedSpy.notCalled).toBe(true);
           expect(isFromAddressCorrectSpy.notCalled).toBe(true);
         }
       )
-    );
+    });
 
     // TODO: Test for revoked certificate
 
@@ -356,7 +388,100 @@ describe('SmimeVerificationService', () => {
     getSignedDataFromAsn1Spy.reset();
     fetchSignerEmailSpy.reset();
     isAnyCertificateExpiredSpy.reset();
+    isCertificateRevokedStub.reset();
     isVerificationFailedSpy.reset();
     isFromAddressCorrectSpy.reset();
   });
+});
+
+describe('SmimeVerificationService - revocation check on', () => {
+
+  const config = {requireRootCerts: false, requireRevocationCheck: true};
+
+  const revocationCheckProvider = new RevocationCheckProvider(null, {ocspUrl: ''}, mockLogger, null);
+  const isCertificateRevokedStub = sinon.stub(revocationCheckProvider, 'isCertificateRevoked');
+
+  const smimeVerificationService = new SmimeVerificationService(mockLogger, config, null, revocationCheckProvider);
+
+  const isValidSmimeEmailSpy = sinon.spy(smimeVerificationService, 'isValidSmimeEmail');
+  const isRootNodeContentTypeValueCorrectSpy = sinon.spy(smimeVerificationService, 'isRootNodeContentTypeValueCorrect');
+  const isRootNodeContentTypeProtocolCorrectSpy = sinon.spy(smimeVerificationService, 'isRootNodeContentTypeProtocolCorrect');
+  const isRootNodeContentTypeMicalgCorrectSpy = sinon.spy(smimeVerificationService, 'isRootNodeContentTypeMicalgCorrect');
+  const isSignatureNodeContentTypeValueCorrectSpy = sinon.spy(smimeVerificationService, 'isSignatureNodeContentTypeValueCorrect');
+  const getAsn1TypeFromBufferSpy = sinon.spy(smimeVerificationService, 'getAsn1TypeFromBuffer');
+  const getSignedDataFromAsn1Spy = sinon.spy(smimeVerificationService, 'getSignedDataFromAsn1');
+  const fetchSignerEmailSpy = sinon.spy(smimeVerificationService, 'fetchSignerEmailAndIndex');
+  const isAnyCertificateExpiredSpy = sinon.spy(smimeVerificationService, 'isAnyCertificateExpired');
+  const isVerificationFailedSpy = sinon.spy(smimeVerificationService, 'isVerificationFailed');
+  const isFromAddressCorrectSpy = sinon.spy(smimeVerificationService, 'isFromAddressCorrect');
+
+  describe('reaches revocation check', () => {
+
+    it('client certificate has been revoked', () => {
+      // Let's pretend we do an OCSP check and it responds that it was revoked.
+      expect.assertions(14);
+      isCertificateRevokedStub.resolves(true);
+
+      return smimeVerificationService.verifyMessageSignature(emailWithValidEverything).then(
+        result => {
+          expect(result.code).toBe(smimeVerificationResultCodes.FRAUD_WARNING);
+          expect(result.message).toBe(`certificateRevoked`);
+          expect(isValidSmimeEmailSpy.calledOnce).toBe(true);
+          expect(isRootNodeContentTypeValueCorrectSpy.calledOnce).toBe(true);
+          expect(isRootNodeContentTypeProtocolCorrectSpy.calledOnce).toBe(true);
+          expect(isRootNodeContentTypeMicalgCorrectSpy.calledOnce).toBe(true);
+          expect(isSignatureNodeContentTypeValueCorrectSpy.calledOnce).toBe(true);
+          expect(getAsn1TypeFromBufferSpy.calledOnce).toBe(true);
+          expect(getSignedDataFromAsn1Spy.calledOnce).toBe(true);
+          expect(fetchSignerEmailSpy.calledOnce).toBe(true);
+          expect(isAnyCertificateExpiredSpy.calledOnce).toBe(true);
+          expect(isCertificateRevokedStub.calledOnce).toBe(true);
+          expect(isVerificationFailedSpy.notCalled).toBe(true);
+          expect(isFromAddressCorrectSpy.notCalled).toBe(true);
+        }
+      )
+    });
+
+    it('revocation check fails', () => {
+      // Let's pretend we do an OCSP check and it responds that it was revoked.
+      expect.assertions(14);
+      isCertificateRevokedStub.resolves(true);
+
+      return smimeVerificationService.verifyMessageSignature(emailWithValidEverything).then(
+        result => {
+          expect(result.code).toBe(smimeVerificationResultCodes.FRAUD_WARNING);
+          expect(result.message).toBe(`certificateRevoked`);
+          expect(isValidSmimeEmailSpy.calledOnce).toBe(true);
+          expect(isRootNodeContentTypeValueCorrectSpy.calledOnce).toBe(true);
+          expect(isRootNodeContentTypeProtocolCorrectSpy.calledOnce).toBe(true);
+          expect(isRootNodeContentTypeMicalgCorrectSpy.calledOnce).toBe(true);
+          expect(isSignatureNodeContentTypeValueCorrectSpy.calledOnce).toBe(true);
+          expect(getAsn1TypeFromBufferSpy.calledOnce).toBe(true);
+          expect(getSignedDataFromAsn1Spy.calledOnce).toBe(true);
+          expect(fetchSignerEmailSpy.calledOnce).toBe(true);
+          expect(isAnyCertificateExpiredSpy.calledOnce).toBe(true);
+          expect(isCertificateRevokedStub.calledOnce).toBe(true);
+          expect(isVerificationFailedSpy.notCalled).toBe(true);
+          expect(isFromAddressCorrectSpy.notCalled).toBe(true);
+        }
+      )
+    });
+  });
+
+
+  afterEach(() => {
+    isValidSmimeEmailSpy.reset();
+    isRootNodeContentTypeValueCorrectSpy.reset();
+    isRootNodeContentTypeProtocolCorrectSpy.reset();
+    isRootNodeContentTypeMicalgCorrectSpy.reset();
+    isSignatureNodeContentTypeValueCorrectSpy.reset();
+    getAsn1TypeFromBufferSpy.reset();
+    getSignedDataFromAsn1Spy.reset();
+    fetchSignerEmailSpy.reset();
+    isAnyCertificateExpiredSpy.reset();
+    isCertificateRevokedStub.reset();
+    isVerificationFailedSpy.reset();
+    isFromAddressCorrectSpy.reset();
+  });
+
 });

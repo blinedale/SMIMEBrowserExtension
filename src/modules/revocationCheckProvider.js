@@ -17,7 +17,7 @@ class RevocationCheckProvider {
 
   /**
    * Resolves to a boolean - true if the certificate is revoked, false if the certificate is not revoked.
-   * Throws an exception if we cannot get a conclusive result. 
+   * Rejects with an Error if we cannot get a conclusive result. 
    *
    * @param {string} clientCertificateSerialNumber Serial number in hex format.
    * @param {MimeNode} signatureNode 
@@ -35,16 +35,16 @@ class RevocationCheckProvider {
           this.logger.log(revocationCheckResult);
           return resolve(this.processResult(revocationCheckResult.status));
         }
-  
+
         this.logger.log(`Found no cached revocation status. Will perform a new revocation check.`);
         this.performRevocationCheck(signatureNode)
         .then(revocationStatus => {
-          const isRevoked = this.processResult(revocationStatus); 
+          const isRevoked = this.processResult(revocationStatus);
 
           if (typeof isRevoked !== 'boolean') {
             reject(isRevoked);
           }
-          
+
           this.repository.persist({id: clientCertificateSerialNumber, status: revocationStatus});
           return resolve(isRevoked);
         });
@@ -81,7 +81,7 @@ class RevocationCheckProvider {
       case ocspCheckResultCodes.REVOKED:
         return true; // IS revoked
       default:
-        return new Error(this.unrecognizedStatusMessage);
+        return new TypeError(this.unrecognizedStatusMessage);
     }
   }
 }
