@@ -29,6 +29,6 @@ chrome.runtime.onMessage.addListener(
       return true;
     }
 
-    console.error('unknown message');
+    loggerService.err('unknown message');
   }
 );

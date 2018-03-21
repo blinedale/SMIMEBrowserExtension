@@ -51,7 +51,8 @@ class DbHandler {
           // There is no old version - creating db and stores from scratch
 
           Object.keys(databaseStores).forEach(storeKey =>
-            dbConnection.createObjectStore(databaseStores[storeKey], {keyPath: `id`}));
+            dbConnection.createObjectStore(databaseStores[storeKey], {keyPath: `id`})
+          );
 
           this.loggerService.log(`Created database successfully.`);
         }
@@ -163,7 +164,7 @@ class DbHandler {
   }
 
   /**
-   * @returns {Object}
+   * @returns {object}
    */
   calculateExpirationTime() {
     const millisecondsPerMinute = 60000;
