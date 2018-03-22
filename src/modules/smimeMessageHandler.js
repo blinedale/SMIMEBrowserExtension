@@ -38,20 +38,21 @@ class SmimeMessageHandler {
   verifyAndMark(rawMessage, mailId, domMessage) {
     try {
       // Send to background script and process response
-      chrome.runtime.sendMessage({method: messagingMethods.verifyMessageSignature, rawMessage, mailId}, result => {
+      this.chromeRuntimeSendMessage({method: messagingMethods.verifyMessageSignature, rawMessage, mailId})
+      .then(result => {
         if (!result || !result.mailId) {
           throw `Verification error - cannot proceed with mail id ${mailId}.`;
         }
 
         this.loggerService.log(`Reached conclusive result in S/MIME verification of mail id ${mailId}. Will attempt to save it.`);
         this.loggerService.log(result);
-
-        chrome.runtime.sendMessage({method: messagingMethods.saveResult, result}, result => {
+      }).then(result => {
+        this.chromeRuntimeSendMessage({method: messagingMethods.saveResult, result}).
+        then(result => {
           if (result) {
             this.loggerService.log(`Mail with id ${mailId} successfully saved.`);
           }
         });
-
         this.markingService.markResult(domMessage, result);
       });
     }
