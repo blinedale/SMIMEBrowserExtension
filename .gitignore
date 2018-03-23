@@ -6,3 +6,5 @@ dist/
 .vscode/
 config/config.json
 src/chrome/manifest.json
+coverage/
+yarn-error.log

@@ -1,11 +1,12 @@
 import messagingMethods from '../constants/messagingMethods';
-import {smimeVerificationService, dbHandler, loggerService} from '../modules/background';
+import {smimeVerificationService, signatureVerificationRepository, loggerService} from '../modules/background';
 
 chrome.runtime.onMessage.addListener(
   (request, sender, sendResponse) => {
     if (request.method === messagingMethods.verifyMessageSignature) {
       try {
-        smimeVerificationService.verifyMessageSignature(request.rawMessage, request.mailId).then(result => sendResponse(result));
+        smimeVerificationService.verifyMessageSignature(request.rawMessage, request.mailId)
+        .then(result => sendResponse(result));
       } catch (e) {
         loggerService.err(e);
         sendResponse(null);
@@ -15,17 +16,19 @@ chrome.runtime.onMessage.addListener(
     }
 
     if (request.method === messagingMethods.getSavedResult) {
-      dbHandler.getSavedResult(request.messageId).then(result => sendResponse(result));
+      signatureVerificationRepository.get(request.messageId)
+      .then(result => sendResponse(result));
 
       return true;
     }
 
     if (request.method === messagingMethods.saveResult) {
-      dbHandler.saveResult(request.result).then(result => sendResponse(result));
+      signatureVerificationRepository.persist(request.result)
+      .then(result => sendResponse(result));
 
       return true;
     }
 
-    console.error('unknown message');
+    loggerService.err('unknown message');
   }
 );
